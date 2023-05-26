@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 
-with open("DESCRIPTION.md", "r") as fh:
+with open("package/DESCRIPTION.md", "r") as fh:
     long_description = fh.read()
 
 
