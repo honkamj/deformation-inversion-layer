@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>deformation_inversion_layer.interpolator.algorithm API documentation</title>
+<meta name="description" content="Core interpolation algorithms" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>deformation_inversion_layer.interpolator.algorithm</code></h1>
+</header>
+<section id="section-intro">
+<p>Core interpolation algorithms</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;Core interpolation algorithms&#34;&#34;&#34;
+
+from typing import List, Optional, Tuple
+
+from torch import Tensor
+from torch import device as torch_device
+from torch import dtype as torch_dtype
+from torch import linspace, meshgrid, stack, tensor
+from torch.jit import script
+from torch.nn.functional import grid_sample
+
+
+@script
+def _move_channels_last(tensor: Tensor, num_channel_dims: int = 1) -&gt; Tensor:
+    if tensor.ndim == num_channel_dims:
+        return tensor
+    return tensor.permute(
+        [0] + list(range(num_channel_dims + 1, tensor.ndim)) + list(range(1, num_channel_dims + 1))
+    )
+
+
+@script
+def _index_by_channel_dims(n_total_dims: int, channel_dim_index: int, n_channel_dims: int) -&gt; int:
+    if n_total_dims &lt; n_channel_dims:
+        raise RuntimeError(&#34;Number of channel dimensions do not match&#34;)
+    if n_total_dims == n_channel_dims:
+        return channel_dim_index
+    return channel_dim_index + 1
+
+
+@script
+def _num_spatial_dims(n_total_dims: int, n_channel_dims: int) -&gt; int:
+    if n_total_dims &lt; n_channel_dims:
+        raise RuntimeError(&#34;Number of channel dimensions do not match&#34;)
+    if n_total_dims &lt;= n_channel_dims + 1:
+        return 0
+    return n_total_dims - n_channel_dims - 1
+
+
+@script
+def _convert_voxel_to_normalized_coordinates(
+    coordinates: Tensor, volume_shape: Optional[List[int]] = None
+) -&gt; Tensor:
+    channel_dim = _index_by_channel_dims(coordinates.ndim, channel_dim_index=0, n_channel_dims=1)
+    n_spatial_dims = _num_spatial_dims(n_total_dims=coordinates.ndim, n_channel_dims=1)
+    n_dims = coordinates.size(channel_dim)
+    inferred_volume_shape = coordinates.shape[-n_dims:] if volume_shape is None else volume_shape
+    add_spatial_dims_view = (-1,) + n_spatial_dims * (1,)
+    volume_shape_tensor = tensor(
+        inferred_volume_shape, dtype=coordinates.dtype, device=coordinates.device
+    ).view(add_spatial_dims_view)
+    coordinate_grid_start = tensor(-1.0, dtype=coordinates.dtype, device=coordinates.device).view(
+        add_spatial_dims_view
+    )
+    coordinate_grid_end = tensor(1.0, dtype=coordinates.dtype, device=coordinates.device).view(
+        add_spatial_dims_view
+    )
+    output = (
+        coordinates / (volume_shape_tensor - 1) * (coordinate_grid_end - coordinate_grid_start)
+        + coordinate_grid_start
+    )
+    return output
+
+
+@script
+def _broadcast_batch_size(tensor_1: Tensor, tensor_2: Tensor) -&gt; Tuple[Tensor, Tensor]:
+    batch_size = max(tensor_1.size(0), tensor_2.size(0))
+    if tensor_1.size(0) == 1 and batch_size != 1:
+        tensor_1 = tensor_1[0].expand((batch_size,) + tensor_1.shape[1:])
+    elif tensor_2.size(0) == 1 and batch_size != 1:
+        tensor_2 = tensor_2[0].expand((batch_size,) + tensor_2.shape[1:])
+    elif tensor_1.size(0) != tensor_2.size(0) and batch_size != 1:
+        raise ValueError(&#34;Can not broadcast batch size&#34;)
+    return tensor_1, tensor_2
+
+
+@script
+def _match_grid_shape_to_dims(grid: Tensor) -&gt; Tensor:
+    batch_size = grid.size(0)
+    n_dims = grid.size(1)
+    grid_shape = grid.shape[2:]
+    dim_matched_grid_shape = (
+        (1,) * max(0, n_dims - grid.ndim + 1) + grid_shape[: n_dims - 1] + (-1,)
+    )
+    return grid.view(
+        (
+            batch_size,
+            n_dims,
+        )
+        + dim_matched_grid_shape
+    )
+
+
+def interpolate(
+    volume: Tensor, grid: Tensor, mode: str = &#34;bilinear&#34;, padding_mode: str = &#34;border&#34;
+) -&gt; Tensor:
+    &#34;&#34;&#34;Interpolate in voxel coordinates
+
+    Args:
+        volume: Interpolated volume with shape
+            (batch_size, [channel_1, ..., channel_n, ]dim_1, ..., dim_{n_dims})
+        grid: Grid defining interpolation locations with shape (batch_size, n_dims, *target_shape)
+        mode: Interpolation mode
+        padding_mode: Padding mode defining extrapolation behaviour
+
+    Returns:
+        Volume interpolated at grid locations with shape
+            (batch_size, channel_1, ..., channel_n, *target_shape)
+    &#34;&#34;&#34;
+    if grid.ndim == 1:
+        grid = grid[None]
+    n_dims = grid.size(1)
+    channel_shape = volume.shape[1:-n_dims]
+    volume_shape = volume.shape[-n_dims:]
+    target_shape = grid.shape[2:]
+    dim_matched_grid = _match_grid_shape_to_dims(grid)
+    normalized_grid = _convert_voxel_to_normalized_coordinates(dim_matched_grid, list(volume_shape))
+    simplified_volume = volume.view((volume.size(0), -1) + volume_shape)
+    permuted_volume = simplified_volume.permute(
+        [0, 1] + list(range(simplified_volume.ndim - 1, 2 - 1, -1))
+    )
+    permuted_grid = _move_channels_last(normalized_grid, 1)
+    permuted_volume, permuted_grid = _broadcast_batch_size(permuted_volume, permuted_grid)
+    return grid_sample(
+        input=permuted_volume,
+        grid=permuted_grid,
+        align_corners=True,
+        mode=mode,
+        padding_mode=padding_mode,
+    ).view((-1,) + channel_shape + target_shape)
+
+
+def generate_voxel_coordinate_grid(
+    shape: List[int], device: torch_device, dtype: Optional[torch_dtype] = None
+) -&gt; Tensor:
+    &#34;&#34;&#34;Generate voxel coordinate grid
+
+    Args:
+        shape: Shape of the grid
+        device: Device of the grid
+        dtype: Data type of the grid
+
+    Returns:
+        Voxel coordinate grid with shape (1, len(shape), dim_1, ..., dim_{len(shape)})
+    &#34;&#34;&#34;
+    axes = [
+        linspace(start=0, end=int(dim_size) - 1, steps=int(dim_size), device=device, dtype=dtype)
+        for dim_size in shape
+    ]
+    coordinates = stack(meshgrid(axes, indexing=&#34;ij&#34;), dim=0)
+    return coordinates[None]</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="deformation_inversion_layer.interpolator.algorithm.generate_voxel_coordinate_grid"><code class="name flex">
+<span>def <span class="ident">generate_voxel_coordinate_grid</span></span>(<span>shape: List[int], device: torch.device, dtype: Optional[torch.dtype] = None) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generate voxel coordinate grid</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>shape</code></strong></dt>
+<dd>Shape of the grid</dd>
+<dt><strong><code>device</code></strong></dt>
+<dd>Device of the grid</dd>
+<dt><strong><code>dtype</code></strong></dt>
+<dd>Data type of the grid</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Voxel coordinate grid with shape (1, len(shape), dim_1, &hellip;, dim_{len(shape)})</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def generate_voxel_coordinate_grid(
+    shape: List[int], device: torch_device, dtype: Optional[torch_dtype] = None
+) -&gt; Tensor:
+    &#34;&#34;&#34;Generate voxel coordinate grid
+
+    Args:
+        shape: Shape of the grid
+        device: Device of the grid
+        dtype: Data type of the grid
+
+    Returns:
+        Voxel coordinate grid with shape (1, len(shape), dim_1, ..., dim_{len(shape)})
+    &#34;&#34;&#34;
+    axes = [
+        linspace(start=0, end=int(dim_size) - 1, steps=int(dim_size), device=device, dtype=dtype)
+        for dim_size in shape
+    ]
+    coordinates = stack(meshgrid(axes, indexing=&#34;ij&#34;), dim=0)
+    return coordinates[None]</code></pre>
+</details>
+</dd>
+<dt id="deformation_inversion_layer.interpolator.algorithm.interpolate"><code class="name flex">
+<span>def <span class="ident">interpolate</span></span>(<span>volume: torch.Tensor, grid: torch.Tensor, mode: str = 'bilinear', padding_mode: str = 'border') ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Interpolate in voxel coordinates</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>volume</code></strong></dt>
+<dd>Interpolated volume with shape
+(batch_size, [channel_1, &hellip;, channel_n, ]dim_1, &hellip;, dim_{n_dims})</dd>
+<dt><strong><code>grid</code></strong></dt>
+<dd>Grid defining interpolation locations with shape (batch_size, n_dims, *target_shape)</dd>
+<dt><strong><code>mode</code></strong></dt>
+<dd>Interpolation mode</dd>
+<dt><strong><code>padding_mode</code></strong></dt>
+<dd>Padding mode defining extrapolation behaviour</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Volume interpolated at grid locations with shape
+(batch_size, channel_1, &hellip;, channel_n, *target_shape)</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def interpolate(
+    volume: Tensor, grid: Tensor, mode: str = &#34;bilinear&#34;, padding_mode: str = &#34;border&#34;
+) -&gt; Tensor:
+    &#34;&#34;&#34;Interpolate in voxel coordinates
+
+    Args:
+        volume: Interpolated volume with shape
+            (batch_size, [channel_1, ..., channel_n, ]dim_1, ..., dim_{n_dims})
+        grid: Grid defining interpolation locations with shape (batch_size, n_dims, *target_shape)
+        mode: Interpolation mode
+        padding_mode: Padding mode defining extrapolation behaviour
+
+    Returns:
+        Volume interpolated at grid locations with shape
+            (batch_size, channel_1, ..., channel_n, *target_shape)
+    &#34;&#34;&#34;
+    if grid.ndim == 1:
+        grid = grid[None]
+    n_dims = grid.size(1)
+    channel_shape = volume.shape[1:-n_dims]
+    volume_shape = volume.shape[-n_dims:]
+    target_shape = grid.shape[2:]
+    dim_matched_grid = _match_grid_shape_to_dims(grid)
+    normalized_grid = _convert_voxel_to_normalized_coordinates(dim_matched_grid, list(volume_shape))
+    simplified_volume = volume.view((volume.size(0), -1) + volume_shape)
+    permuted_volume = simplified_volume.permute(
+        [0, 1] + list(range(simplified_volume.ndim - 1, 2 - 1, -1))
+    )
+    permuted_grid = _move_channels_last(normalized_grid, 1)
+    permuted_volume, permuted_grid = _broadcast_batch_size(permuted_volume, permuted_grid)
+    return grid_sample(
+        input=permuted_volume,
+        grid=permuted_grid,
+        align_corners=True,
+        mode=mode,
+        padding_mode=padding_mode,
+    ).view((-1,) + channel_shape + target_shape)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="deformation_inversion_layer.interpolator" href="index.html">deformation_inversion_layer.interpolator</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="deformation_inversion_layer.interpolator.algorithm.generate_voxel_coordinate_grid" href="#deformation_inversion_layer.interpolator.algorithm.generate_voxel_coordinate_grid">generate_voxel_coordinate_grid</a></code></li>
+<li><code><a title="deformation_inversion_layer.interpolator.algorithm.interpolate" href="#deformation_inversion_layer.interpolator.algorithm.interpolate">interpolate</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

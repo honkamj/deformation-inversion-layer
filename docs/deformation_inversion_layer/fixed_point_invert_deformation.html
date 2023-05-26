@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>deformation_inversion_layer.fixed_point_invert_deformation API documentation</title>
+<meta name="description" content="Fixed point deformation inversion function" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>deformation_inversion_layer.fixed_point_invert_deformation</code></h1>
+</header>
+<section id="section-intro">
+<p>Fixed point deformation inversion function</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;Fixed point deformation inversion function&#34;&#34;&#34;
+
+from functools import partial
+from typing import Optional
+
+from torch import Tensor
+from torch import dtype as torch_dtype
+from torch import enable_grad, zeros_like
+from torch.autograd import grad
+from torch.autograd.function import Function, FunctionCtx, once_differentiable
+
+from fixed_point_iteration import (AndersonSolver,
+                                   MaxElementWiseAbsStopCriterion,
+                                   RelativeL2ErrorStopCriterion)
+from interface import IFixedPointSolver, IInterpolator
+from interpolator import LinearInterpolator
+from interpolator.algorithm import generate_voxel_coordinate_grid
+
+
+class DeformationInversionArguments:
+    &#34;&#34;&#34;Arguments for deformation fixed point inversion
+
+    Args:
+        interpolator: Interpolator with which to interpolate the input
+            displacement field
+        forward_solver: Fixed point solver for the forward pass
+        backward_solver: Fixed point solver for the backward pass
+        forward_dtype: Data type to use for the solver in the forward pass, by default
+            the data type of the input is used
+        backward_dtype: Data type to use for the solver in the backward pass, by default
+            the data type of the input is used
+    &#34;&#34;&#34;
+
+    def __init__(
+            self,
+            interpolator: Optional[IInterpolator] = None,
+            forward_solver: Optional[IFixedPointSolver] = None,
+            backward_solver: Optional[IFixedPointSolver] = None,
+            forward_dtype: Optional[torch_dtype] = None,
+            backward_dtype: Optional[torch_dtype] = None
+        ) -&gt; None:
+        self.interpolator = LinearInterpolator() if interpolator is None else interpolator
+        self.forward_solver = AndersonSolver(
+            stop_criterion=MaxElementWiseAbsStopCriterion(),
+        ) if forward_solver is None else forward_solver
+        self.backward_solver = AndersonSolver(
+            stop_criterion=RelativeL2ErrorStopCriterion(),
+        ) if backward_solver is None else backward_solver
+        self.forward_dtype = forward_dtype
+        self.backward_dtype = backward_dtype
+
+
+def fixed_point_invert_deformation(
+    displacement_field: Tensor,
+    arguments: Optional[DeformationInversionArguments] = None,
+    initial_guess: Optional[Tensor] = None,
+) -&gt; Tensor:
+    &#34;&#34;&#34;Fixed point invert displacement field
+
+    Args:
+        displacement_field: Displacement field describing the deformation to invert with shape
+            (batch_size, n_channels, dim_1, ..., dim_{n_dims})
+        arguments: Arguments for fixed point inversion
+        initial_guess: Initial guess for inverted displacement field, if not given, negative
+            of the displacement field is used
+    
+    Returns:
+        Inverted displacement field with shape (batch_size, n_channels, dim_1, ..., dim_{n_dims})
+    &#34;&#34;&#34;
+    return _FixedPointInvertDisplacementField.apply(
+        displacement_field,
+        DeformationInversionArguments() if arguments is None else arguments,
+        initial_guess
+    )
+
+
+class _FixedPointInvertDisplacementField(Function):
+    @staticmethod
+    def _forward_fixed_point_mapping(
+        inverted_displacement_field: Tensor,
+        displacement_field: Tensor,
+        interpolator: IInterpolator,
+        voxel_coordinate_grid: Tensor,
+    ) -&gt; Tensor:
+        return -interpolator(
+            volume=displacement_field,
+            coordinates=voxel_coordinate_grid + inverted_displacement_field,
+        )
+
+    @staticmethod
+    def _backward_fixed_point_mapping(
+        vjp_estimate: Tensor,
+        inverted_displacement_field: Tensor,
+        forward_fixed_point_output: Tensor,
+        grad_output: Tensor,
+    ) -&gt; Tensor:
+        return (
+            grad(
+                outputs=forward_fixed_point_output,
+                inputs=inverted_displacement_field,
+                grad_outputs=vjp_estimate,
+                retain_graph=True,
+            )[0]
+            + grad_output
+        )
+
+    @staticmethod
+    def forward(  # type: ignore # pylint: disable=arguments-differ
+        ctx: FunctionCtx,
+        displacement_field: Tensor,
+        arguments: DeformationInversionArguments,
+        initial_guess: Optional[Tensor],
+    ):
+        dtype = (
+            displacement_field.dtype if arguments.forward_dtype is None else arguments.forward_dtype
+        )
+        type_converted_displacement_field = displacement_field.to(dtype)
+        inverted_displacement_field = arguments.forward_solver.solve(
+            partial(
+                _FixedPointInvertDisplacementField._forward_fixed_point_mapping,
+                displacement_field=type_converted_displacement_field,
+                voxel_coordinate_grid=generate_voxel_coordinate_grid(
+                    displacement_field.shape[2:], displacement_field.device, dtype=dtype
+                ),
+                interpolator=arguments.interpolator,
+            ),
+            initial_value=(
+                -type_converted_displacement_field if initial_guess is None else initial_guess
+            ),
+        ).to(displacement_field.dtype)
+        grad_needed, _, _ = ctx.needs_input_grad  # type: ignore
+        if grad_needed:
+            ctx.save_for_backward(displacement_field, inverted_displacement_field)
+            ctx.arguments = arguments  # type: ignore
+            ctx.dtype = dtype  # type: ignore
+        return inverted_displacement_field
+
+    @staticmethod
+    @once_differentiable
+    def backward(ctx, grad_output: Tensor):  # type: ignore # pylint: disable=arguments-differ
+        grad_needed, _, _ = ctx.needs_input_grad
+        if grad_needed:
+            displacement_field: Tensor
+            inverted_displacement_field: Tensor
+            (
+                displacement_field,
+                inverted_displacement_field,
+            ) = ctx.saved_tensors
+            arguments: DeformationInversionArguments = ctx.arguments
+            del ctx
+            dtype = (
+                displacement_field.dtype
+                if arguments.backward_dtype is None
+                else arguments.backward_dtype
+            )
+            original_dtype = displacement_field.dtype
+            displacement_field = displacement_field.to(dtype).detach()
+            inverted_displacement_field = inverted_displacement_field.to(dtype).detach()
+            grad_output = grad_output.to(dtype)
+            if arguments.backward_solver is None:
+                raise RuntimeError(&#34;Backward solver not specified!&#34;)
+            with enable_grad():
+                displacement_field.requires_grad_(True)
+                inverted_displacement_field.requires_grad_(True)
+                forward_fixed_point_output = (
+                    _FixedPointInvertDisplacementField._forward_fixed_point_mapping(
+                        inverted_displacement_field=inverted_displacement_field,
+                        displacement_field=displacement_field,
+                        interpolator=arguments.interpolator,
+                        voxel_coordinate_grid=generate_voxel_coordinate_grid(
+                            displacement_field.shape[2:], displacement_field.device, dtype=dtype
+                        ),
+                    )
+                )
+                displacement_field.requires_grad_(False)
+                fixed_point_solved_gradient = arguments.backward_solver.solve(
+                    partial(
+                        _FixedPointInvertDisplacementField._backward_fixed_point_mapping,
+                        inverted_displacement_field=inverted_displacement_field,
+                        forward_fixed_point_output=forward_fixed_point_output,
+                        grad_output=grad_output,
+                    ),
+                    initial_value=zeros_like(grad_output),
+                )
+                displacement_field.requires_grad_(True)
+                inverted_displacement_field.requires_grad_(False)
+                output_grad = grad(
+                    outputs=forward_fixed_point_output,
+                    inputs=displacement_field,
+                    grad_outputs=fixed_point_solved_gradient,
+                    retain_graph=False,
+                )[0]
+                return output_grad.to(original_dtype), None, None
+        return None, None, None</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="deformation_inversion_layer.fixed_point_invert_deformation.fixed_point_invert_deformation"><code class="name flex">
+<span>def <span class="ident">fixed_point_invert_deformation</span></span>(<span>displacement_field: torch.Tensor, arguments: Optional[<a title="deformation_inversion_layer.fixed_point_invert_deformation.DeformationInversionArguments" href="#deformation_inversion_layer.fixed_point_invert_deformation.DeformationInversionArguments">DeformationInversionArguments</a>] = None, initial_guess: Optional[torch.Tensor] = None) ‑> torch.Tensor</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Fixed point invert displacement field</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>displacement_field</code></strong></dt>
+<dd>Displacement field describing the deformation to invert with shape
+(batch_size, n_channels, dim_1, &hellip;, dim_{n_dims})</dd>
+<dt><strong><code>arguments</code></strong></dt>
+<dd>Arguments for fixed point inversion</dd>
+<dt><strong><code>initial_guess</code></strong></dt>
+<dd>Initial guess for inverted displacement field, if not given, negative
+of the displacement field is used</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>Inverted displacement field with shape (batch_size, n_channels, dim_1, &hellip;, dim_{n_dims})</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fixed_point_invert_deformation(
+    displacement_field: Tensor,
+    arguments: Optional[DeformationInversionArguments] = None,
+    initial_guess: Optional[Tensor] = None,
+) -&gt; Tensor:
+    &#34;&#34;&#34;Fixed point invert displacement field
+
+    Args:
+        displacement_field: Displacement field describing the deformation to invert with shape
+            (batch_size, n_channels, dim_1, ..., dim_{n_dims})
+        arguments: Arguments for fixed point inversion
+        initial_guess: Initial guess for inverted displacement field, if not given, negative
+            of the displacement field is used
+    
+    Returns:
+        Inverted displacement field with shape (batch_size, n_channels, dim_1, ..., dim_{n_dims})
+    &#34;&#34;&#34;
+    return _FixedPointInvertDisplacementField.apply(
+        displacement_field,
+        DeformationInversionArguments() if arguments is None else arguments,
+        initial_guess
+    )</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="deformation_inversion_layer.fixed_point_invert_deformation.DeformationInversionArguments"><code class="flex name class">
+<span>class <span class="ident">DeformationInversionArguments</span></span>
+<span>(</span><span>interpolator: Optional[interface.IInterpolator] = None, forward_solver: Optional[interface.IFixedPointSolver] = None, backward_solver: Optional[interface.IFixedPointSolver] = None, forward_dtype: Optional[torch.dtype] = None, backward_dtype: Optional[torch.dtype] = None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Arguments for deformation fixed point inversion</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>interpolator</code></strong></dt>
+<dd>Interpolator with which to interpolate the input
+displacement field</dd>
+<dt><strong><code>forward_solver</code></strong></dt>
+<dd>Fixed point solver for the forward pass</dd>
+<dt><strong><code>backward_solver</code></strong></dt>
+<dd>Fixed point solver for the backward pass</dd>
+<dt><strong><code>forward_dtype</code></strong></dt>
+<dd>Data type to use for the solver in the forward pass, by default
+the data type of the input is used</dd>
+<dt><strong><code>backward_dtype</code></strong></dt>
+<dd>Data type to use for the solver in the backward pass, by default
+the data type of the input is used</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DeformationInversionArguments:
+    &#34;&#34;&#34;Arguments for deformation fixed point inversion
+
+    Args:
+        interpolator: Interpolator with which to interpolate the input
+            displacement field
+        forward_solver: Fixed point solver for the forward pass
+        backward_solver: Fixed point solver for the backward pass
+        forward_dtype: Data type to use for the solver in the forward pass, by default
+            the data type of the input is used
+        backward_dtype: Data type to use for the solver in the backward pass, by default
+            the data type of the input is used
+    &#34;&#34;&#34;
+
+    def __init__(
+            self,
+            interpolator: Optional[IInterpolator] = None,
+            forward_solver: Optional[IFixedPointSolver] = None,
+            backward_solver: Optional[IFixedPointSolver] = None,
+            forward_dtype: Optional[torch_dtype] = None,
+            backward_dtype: Optional[torch_dtype] = None
+        ) -&gt; None:
+        self.interpolator = LinearInterpolator() if interpolator is None else interpolator
+        self.forward_solver = AndersonSolver(
+            stop_criterion=MaxElementWiseAbsStopCriterion(),
+        ) if forward_solver is None else forward_solver
+        self.backward_solver = AndersonSolver(
+            stop_criterion=RelativeL2ErrorStopCriterion(),
+        ) if backward_solver is None else backward_solver
+        self.forward_dtype = forward_dtype
+        self.backward_dtype = backward_dtype</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="deformation_inversion_layer" href="index.html">deformation_inversion_layer</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="deformation_inversion_layer.fixed_point_invert_deformation.fixed_point_invert_deformation" href="#deformation_inversion_layer.fixed_point_invert_deformation.fixed_point_invert_deformation">fixed_point_invert_deformation</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="deformation_inversion_layer.fixed_point_invert_deformation.DeformationInversionArguments" href="#deformation_inversion_layer.fixed_point_invert_deformation.DeformationInversionArguments">DeformationInversionArguments</a></code></h4>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
