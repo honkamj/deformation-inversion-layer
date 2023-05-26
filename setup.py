@@ -1,17 +1,18 @@
 from setuptools import setup, find_packages
 
 
-with open("README.md", "r") as fh:
+with open("DESCRIPTION.md", "r") as fh:
     long_description = fh.read()
 
 
 setup(
     name='deformation_inversion_layer',
-    version='0.1',
+    version='0.0.1',
     license='MIT',
     author="Joel Honkamaa",
     description="Deformation inversion layer is a neural network layer for inverting deformation fields",
     long_description=long_description,
+    long_description_content_type="text/markdown",
     packages=find_packages('src'),
     package_dir={'': 'src'},
     url='https://github.com/honkamj/deformation_inversion_layer',

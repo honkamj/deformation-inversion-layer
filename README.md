@@ -8,14 +8,14 @@ Install using pip by running the command
 
     pip install deformation_inversion_layer
 
-## Prerequisites
+## Requirements
 
 - `Python 3.6+`
 - `PyTorch 1.10+`
 
 ## Documentation
 
-For a quick start tutorial, see [tutorial.ipynb](tutorial.ipynb). For API reference, go to [https://honkamj.github.io/deformation_inversion_layer/](https://honkamj.github.io/deformation_inversion_layer/ "https://honkamj.github.io/deformation_inversion_layer/").
+For a quick start tutorial, see [tutorial.ipynb](tutorial.ipynb). For API reference, go to [https://honkamj.github.io/deformation_inversion_layer/](https://honkamj.github.io/deformation_inversion_layer/).
 
 ## SITReg
 
@@ -26,8 +26,8 @@ For SITReg implementation, see repository [SITReg](https://github.com/honkamj/SI
 If you use deformation inversion layer, or other parts of the repository, please cite (see [bibtex](citations.bib)):
 
 - **SITReg: Multi-resolution architecture for symmetric, inverse consistent, and topology preserving image registration using deformation inversion layers**  
-[Joel Honkamaa](https://github.com/honkamj "Joel Honkamaa"), Pekka Marttinen  
-Under review ([eprint arXiv:2303.10211](https://arxiv.org/abs/2303.10211 "eprint arXiv:2303.10211"))
+[Joel Honkamaa](https://github.com/honkamj), Pekka Marttinen  
+Under review ([eprint arXiv:2303.10211](https://arxiv.org/abs/2303.10211))
 
 ## Acknowledgments
 
