@@ -6,7 +6,7 @@
 
 Install using pip by running the command
 
-    pip install deformation_inversion_layer
+    pip install deformation-inversion-layer
 
 ## Requirements
 
@@ -15,11 +15,11 @@ Install using pip by running the command
 
 ## Documentation
 
-For a quick start tutorial, see [tutorial.ipynb](tutorial.ipynb). For API reference, go to [https://honkamj.github.io/deformation_inversion_layer/](https://honkamj.github.io/deformation_inversion_layer/).
+For a quick start tutorial, see [tutorial.ipynb](tutorial.ipynb). For API reference, go to [https://honkamj.github.io/deformation-inversion-layer/](https://honkamj.github.io/deformation-inversion-layer/).
 
 ## SITReg
 
-For SITReg implementation, see repository [SITReg](https://github.com/honkamj/SITReg "SITReg").
+For SITReg implementation, see repository [SITReg](https://github.com/honkamj/SITReg).
 
 ## Publication
 

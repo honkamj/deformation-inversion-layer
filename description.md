@@ -6,7 +6,7 @@
 
 Install using pip by running the command
 
-    pip install deformation_inversion_layer
+    pip install deformation-inversion-layer
 
 ## Requirements
 
@@ -15,7 +15,7 @@ Install using pip by running the command
 
 ## Source code
 
-Code repository can be found at GitHub [https://github.com/honkamj/deformation_inversion_layer](https://github.com/honkamj/deformation_inversion_layer)
+Code repository can be found at GitHub [https://github.com/honkamj/deformation-inversion-layer](https://github.com/honkamj/deformation-inversion-layer)
 
 ## Documentation
 

@@ -1,0 +1,31 @@
+[project]
+name = "deformation-inversion-layer"
+version = "0.0.1"
+authors = [
+  { name="Joel Honkamaa" },
+]
+description = "Deformation inversion layer is a neural network layer for inverting deformation fields"
+readme = "description.md"
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "torch>=1.10"
+]
+keywords=[
+    "deep learning",
+    "neural networks",
+    "fixed point iteration",
+    "deep equilibrium networks",
+    "image registration",
+    "deformation",
+    "coordinate mapping",
+    "pytorch"
+]
+license = {file = "LICENSE"}
+
+[project.urls]
+"Homepage" = "https://github.com/honkamj/deformation-inversion-layer"
