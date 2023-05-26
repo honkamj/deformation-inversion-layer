@@ -15,7 +15,7 @@ Install using pip by running the command
 
 ## Documentation
 
-For a quick start tutorial, see [tutorial.ipynb](tutorial.ipynb). For API reference, go to [https://honkamj.github.io/deformation-inversion-layer/](https://honkamj.github.io/deformation-inversion-layer/).
+For a quick start tutorial, see [quick_start.ipynb](tutorials/quick_start.ipynb). For API reference, go to [https://honkamj.github.io/deformation-inversion-layer/](https://honkamj.github.io/deformation-inversion-layer/).
 
 ## SITReg
 
