@@ -13,9 +13,9 @@ Install using pip by running the command
 - `Python 3.6+`
 - `PyTorch 1.10+`
 
-## Tutorial
+## Documentation
 
-See [tutorial.ipynb](tutorial.ipynb).
+For a quick start tutorial, see [tutorial.ipynb](tutorial.ipynb). For API reference, go to [https://honkamj.github.io/deformation_inversion_layer/](https://honkamj.github.io/deformation_inversion_layer/ "https://honkamj.github.io/deformation_inversion_layer/").
 
 ## SITReg
 
