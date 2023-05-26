@@ -2,6 +2,8 @@
 
 *Deformation inversion layer* is a neural network layer for inverting deformation fields develped as part of SITReg, a deep learning intra-modality image registration arhitecture fulfilling strict symmetry properties.
 
+![example of an inverted deformation](tutorials/example.svg)
+
 ## Installation
 
 Install using pip by running the command
