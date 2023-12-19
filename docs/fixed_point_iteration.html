@@ -34,38 +34,64 @@ from abc import abstractmethod
 
 from torch import Tensor
 from torch import abs as torch_abs
-from torch import bmm, eye
+from torch import bmm, empty, eye
 from torch import max as torch_max
 from torch import zeros, zeros_like
 from torch.linalg import solve
 
-from interface import IFixedPointSolver, IFixedPointStopCriterion
+from .interface import IFixedPointSolver, IFixedPointStopCriterion
 
 
 class BaseStopCriterion(IFixedPointStopCriterion):
     &#34;&#34;&#34;Base stop criterion definining min and max number of iterations
-    
+
     Args:
         min_iterations: Minimum number of iterations to use
         max_iterations: Maximum number of iterations to use
+        check_convergence_every_nth_iteration: Check convergence criterion
+            only every nth itheration, does not have effect on stopping based on
+            min or max number of iterations.
     &#34;&#34;&#34;
 
-    def __init__(self, min_iterations: int = 2, max_iterations: int = 50) -&gt; None:
+    def __init__(
+        self,
+        min_iterations: int = 2,
+        max_iterations: int = 50,
+        check_convergence_every_nth_iteration: int = 1,
+    ) -&gt; None:
         self._min_iterations = min_iterations
         self._max_iterations = max_iterations
+        self._check_convergence_every_nth_iteration = (
+            check_convergence_every_nth_iteration
+        )
+
+    def _should_check_convergence(self, iteration_to_end: int) -&gt; bool:
+        return (
+            (iteration_to_end + 1) % self._check_convergence_every_nth_iteration
+        ) == 0
 
     @abstractmethod
     def _should_stop_after(
-        self, previous_iteration: Tensor, current_iteration: Tensor, iteration_to_end: int
+        self,
+        previous_iteration: Tensor,
+        current_iteration: Tensor,
+        iteration_to_end: int,
     ) -&gt; bool:
         &#34;&#34;&#34;Return whether should stop after the iteration&#34;&#34;&#34;
 
     def should_stop_after(
-        self, previous_iteration: Tensor, current_iteration: Tensor, iteration_to_end: int
+        self,
+        previous_iteration: Tensor,
+        current_iteration: Tensor,
+        iteration_to_end: int,
     ) -&gt; bool:
         if iteration_to_end + 1 &lt; self._min_iterations:
             return False
-        return self._should_stop_after(previous_iteration, current_iteration, iteration_to_end)
+        return self._should_check_convergence(
+            iteration_to_end
+        ) and self._should_stop_after(
+            previous_iteration, current_iteration, iteration_to_end
+        )
 
     def should_stop_before(self, iteration_to_start: int) -&gt; bool:
         if self._max_iterations &gt; iteration_to_start:
@@ -73,50 +99,79 @@ class BaseStopCriterion(IFixedPointStopCriterion):
         return True
 
 
-class MaxElementWiseAbsStopCriterion(BaseStopCriterion):
-    &#34;&#34;&#34;Criterion which stops when no element-wise difference is larger than a threshold
-    
-    Args:
-        min_iterations: Minimum number of iterations to use
-        max_iterations: Maximum number of iterations to use
-        threshold: Error threshold for stopping the iteration
-    &#34;&#34;&#34;
+class FixedIterationCountStopCriterion(BaseStopCriterion):
+    &#34;&#34;&#34;Iteration is terminated based on fixed iteration count&#34;&#34;&#34;
 
     def __init__(
-        self, min_iterations: int = 2, max_iterations: int = 50, threshold: float = 1e-2
+        self,
+        n_iterations: int = 50,
     ) -&gt; None:
-        super().__init__(min_iterations=min_iterations, max_iterations=max_iterations)
+        super().__init__(
+            min_iterations=0,
+            max_iterations=n_iterations,
+            check_convergence_every_nth_iteration=1,
+        )
+
+    def _should_stop_after(
+        self,
+        previous_iteration: Tensor,
+        current_iteration: Tensor,
+        iteration_to_end: int,
+    ) -&gt; bool:
+        return False
+
+
+class MaxElementWiseAbsStopCriterion(BaseStopCriterion):
+    &#34;&#34;&#34;Stops when no element-wise difference is larger than a threshold&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        min_iterations: int = 1,
+        max_iterations: int = 50,
+        threshold: float = 1e-2,
+        check_convergence_every_nth_iteration: int = 1,
+    ) -&gt; None:
+        super().__init__(
+            min_iterations=min_iterations,
+            max_iterations=max_iterations,
+            check_convergence_every_nth_iteration=check_convergence_every_nth_iteration,
+        )
         self._threshold = threshold
 
     def _should_stop_after(
-        self, previous_iteration: Tensor, current_iteration: Tensor, iteration_to_end: int
+        self,
+        previous_iteration: Tensor,
+        current_iteration: Tensor,
+        iteration_to_end: int,
     ) -&gt; bool:
         max_difference = torch_max(torch_abs(previous_iteration - current_iteration))
         return bool(max_difference &lt; self._threshold)
 
 
 class RelativeL2ErrorStopCriterion(BaseStopCriterion):
-    &#34;&#34;&#34;Criterion which stops when relative L^2 error is below a threshold
-    
-    Args:
-        min_iterations: Minimum number of iterations to use
-        max_iterations: Maximum number of iterations to use
-        threshold: Error threshold for stopping the iteration
-    &#34;&#34;&#34;
+    &#34;&#34;&#34;Stops when relative L^2 error is below the set threshold&#34;&#34;&#34;
 
     def __init__(
         self,
-        min_iterations: int = 2,
+        min_iterations: int = 1,
         max_iterations: int = 50,
         threshold: float = 1e-2,
         epsilon: float = 1e-5,
+        check_convergence_every_nth_iteration: int = 1,
     ) -&gt; None:
-        super().__init__(min_iterations=min_iterations, max_iterations=max_iterations)
+        super().__init__(
+            min_iterations=min_iterations,
+            max_iterations=max_iterations,
+            check_convergence_every_nth_iteration=check_convergence_every_nth_iteration,
+        )
         self._threshold = threshold
         self._epsilon = epsilon
 
     def _should_stop_after(
-        self, previous_iteration: Tensor, current_iteration: Tensor, iteration_to_end: int
+        self,
+        previous_iteration: Tensor,
+        current_iteration: Tensor,
+        iteration_to_end: int,
     ) -&gt; bool:
         error = (current_iteration - previous_iteration).norm() / (
             self._epsilon + current_iteration.norm().item()
@@ -126,7 +181,7 @@ class RelativeL2ErrorStopCriterion(BaseStopCriterion):
 
 class AndersonSolverArguments(NamedTuple):
     &#34;&#34;&#34;Arguments for Anderson solver
-    
+
     Attributes:
         memory_length: How many iterations to store in memory
         beta: Beta value of Anderson fixed point solver
@@ -159,12 +214,16 @@ class AndersonSolver(IFixedPointSolver):
         arguments: Optional[AndersonSolverArguments] = None,
     ) -&gt; None:
         self._stop_criterion = (
-            MaxElementWiseAbsStopCriterion() if stop_criterion is None else stop_criterion
+            MaxElementWiseAbsStopCriterion()
+            if stop_criterion is None
+            else stop_criterion
         )
         self._arguments = AndersonSolverArguments() if arguments is None else arguments
 
     def solve(
-        self, fixed_point_function: Callable[[Tensor], Tensor], initial_value: Tensor
+        self,
+        fixed_point_function: Callable[[Tensor, Tensor], None],
+        initial_value: Tensor,
     ) -&gt; Tensor:
         if self._stop_criterion.should_stop_before(0):
             return initial_value
@@ -177,20 +236,16 @@ class AndersonSolver(IFixedPointSolver):
             device=initial_value.device,
         )
         output_memory = zeros_like(input_memory)
-        input_memory[:, 0], output_memory[:, 0] = (
-            initial_value,
-            fixed_point_function(initial_value),
-        )
+        input_memory[:, 0] = initial_value
+        fixed_point_function(initial_value, output_memory[:, 0])
         if self._stop_criterion.should_stop_after(
             previous_iteration=input_memory[:, 0],
             current_iteration=output_memory[:, 0],
             iteration_to_end=0,
         ) or self._stop_criterion.should_stop_before(1):
             return output_memory[:, 0].clone()
-        input_memory[:, 1], output_memory[:, 1] = (
-            output_memory[:, 0],
-            fixed_point_function(output_memory[:, 0]),
-        )
+        input_memory[:, 1] = output_memory[:, 0]
+        fixed_point_function(output_memory[:, 0], output_memory[:, 1])
         if self._stop_criterion.should_stop_after(
             previous_iteration=input_memory[:, 1],
             current_iteration=output_memory[:, 1],
@@ -213,22 +268,29 @@ class AndersonSolver(IFixedPointSolver):
             device=initial_value.device,
         )
         solving_target[:, 0] = 1
-        index = 2
+        index = n_iterations = 2
         while not self._stop_criterion.should_stop_before(index):
             current_memory_length = min(index, self._arguments.memory_length)
             step_differences = (
-                output_memory[:, :current_memory_length] - input_memory[:, :current_memory_length]
+                output_memory[:, :current_memory_length]
+                - input_memory[:, :current_memory_length]
             ).view(batch_size, current_memory_length, -1)
-            coefficients_matrix[:, 1 : current_memory_length + 1, 1 : current_memory_length + 1] = (
+            coefficients_matrix[
+                :, 1 : current_memory_length + 1, 1 : current_memory_length + 1
+            ] = (
                 bmm(step_differences, step_differences.transpose(1, 2))
                 + self._arguments.matrix_epsilon
                 * eye(
-                    current_memory_length, dtype=initial_value.dtype, device=initial_value.device
+                    current_memory_length,
+                    dtype=initial_value.dtype,
+                    device=initial_value.device,
                 )[None]
             )
             del step_differences
-            alpha = solve(
-                coefficients_matrix[:, : current_memory_length + 1, : current_memory_length + 1],
+            alpha = solve(  # PyTorch bug - pylint: disable=not-callable
+                coefficients_matrix[
+                    :, : current_memory_length + 1, : current_memory_length + 1
+                ],
                 solving_target[:, : current_memory_length + 1],
             )[:, 1 : current_memory_length + 1, 0]
             input_memory[:, index % self._arguments.memory_length] = (
@@ -251,12 +313,18 @@ class AndersonSolver(IFixedPointSolver):
                     )[:, 0]
                 ).view_as(initial_value)
             del alpha
-            output_memory[:, index % self._arguments.memory_length] = fixed_point_function(
-                input_memory[:, index % self._arguments.memory_length]
+            fixed_point_function(
+                input_memory[:, index % self._arguments.memory_length],
+                output_memory[:, index % self._arguments.memory_length],
             )
+            n_iterations += 1
             if self._stop_criterion.should_stop_after(
-                previous_iteration=input_memory[:, index % self._arguments.memory_length],
-                current_iteration=output_memory[:, index % self._arguments.memory_length],
+                previous_iteration=input_memory[
+                    :, index % self._arguments.memory_length
+                ],
+                current_iteration=output_memory[
+                    :, index % self._arguments.memory_length
+                ],
                 iteration_to_end=index,
             ):
                 break
@@ -266,7 +334,7 @@ class AndersonSolver(IFixedPointSolver):
 
 class NaiveSolver(IFixedPointSolver):
     &#34;&#34;&#34;Naive fixed point solver
-    
+
     Args:
         stop_criterion: Stop criterion to use
     &#34;&#34;&#34;
@@ -276,32 +344,42 @@ class NaiveSolver(IFixedPointSolver):
         stop_criterion: Optional[IFixedPointStopCriterion] = None,
     ) -&gt; None:
         self._stop_criterion = (
-            MaxElementWiseAbsStopCriterion() if stop_criterion is None else stop_criterion
+            MaxElementWiseAbsStopCriterion()
+            if stop_criterion is None
+            else stop_criterion
         )
 
     def solve(
-        self, fixed_point_function: Callable[[Tensor], Tensor], initial_value: Tensor
+        self,
+        fixed_point_function: Callable[[Tensor, Tensor], None],
+        initial_value: Tensor,
     ) -&gt; Tensor:
-        output = previous_output = initial_value
-        iteration = 0
-        while not self._stop_criterion.should_stop_before(iteration):
-            output = fixed_point_function(previous_output)
+        cache = empty(
+            (2,) + initial_value.shape,
+            dtype=initial_value.dtype,
+            device=initial_value.device,
+        )
+        cache[0] = initial_value
+        n_iterations = 0
+        while not self._stop_criterion.should_stop_before(n_iterations):
+            fixed_point_function(cache[n_iterations % 2], cache[(n_iterations + 1) % 2])
+            n_iterations += 1
             if self._stop_criterion.should_stop_after(
-                previous_iteration=previous_output,
-                current_iteration=output,
-                iteration_to_end=iteration,
+                previous_iteration=cache[n_iterations % 2],
+                current_iteration=cache[(n_iterations + 1) % 2],
+                iteration_to_end=n_iterations - 1,
             ):
                 break
-            previous_output = output
-            iteration += 1
-        return output
+        return cache[n_iterations % 2].clone()
 
 
 class EmptySolver(IFixedPointSolver):
     &#34;&#34;&#34;Empty fixed point solver which returns the initial guess&#34;&#34;&#34;
 
     def solve(
-        self, fixed_point_function: Callable[[Tensor], Tensor], initial_value: Tensor
+        self,
+        fixed_point_function: Callable[[Tensor, Tensor], None],
+        initial_value: Tensor,
     ) -&gt; Tensor:
         return initial_value</code></pre>
 </details>
@@ -317,7 +395,7 @@ class EmptySolver(IFixedPointSolver):
 <dl>
 <dt id="deformation_inversion_layer.fixed_point_iteration.AndersonSolver"><code class="flex name class">
 <span>class <span class="ident">AndersonSolver</span></span>
-<span>(</span><span>stop_criterion: Optional[interface.IFixedPointStopCriterion] = None, arguments: Optional[<a title="deformation_inversion_layer.fixed_point_iteration.AndersonSolverArguments" href="#deformation_inversion_layer.fixed_point_iteration.AndersonSolverArguments">AndersonSolverArguments</a>] = None)</span>
+<span>(</span><span>stop_criterion: Optional[<a title="deformation_inversion_layer.interface.IFixedPointStopCriterion" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion">IFixedPointStopCriterion</a>] = None, arguments: Optional[<a title="deformation_inversion_layer.fixed_point_iteration.AndersonSolverArguments" href="#deformation_inversion_layer.fixed_point_iteration.AndersonSolverArguments">AndersonSolverArguments</a>] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Anderson fixed point solver</p>
@@ -358,12 +436,16 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
         arguments: Optional[AndersonSolverArguments] = None,
     ) -&gt; None:
         self._stop_criterion = (
-            MaxElementWiseAbsStopCriterion() if stop_criterion is None else stop_criterion
+            MaxElementWiseAbsStopCriterion()
+            if stop_criterion is None
+            else stop_criterion
         )
         self._arguments = AndersonSolverArguments() if arguments is None else arguments
 
     def solve(
-        self, fixed_point_function: Callable[[Tensor], Tensor], initial_value: Tensor
+        self,
+        fixed_point_function: Callable[[Tensor, Tensor], None],
+        initial_value: Tensor,
     ) -&gt; Tensor:
         if self._stop_criterion.should_stop_before(0):
             return initial_value
@@ -376,20 +458,16 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
             device=initial_value.device,
         )
         output_memory = zeros_like(input_memory)
-        input_memory[:, 0], output_memory[:, 0] = (
-            initial_value,
-            fixed_point_function(initial_value),
-        )
+        input_memory[:, 0] = initial_value
+        fixed_point_function(initial_value, output_memory[:, 0])
         if self._stop_criterion.should_stop_after(
             previous_iteration=input_memory[:, 0],
             current_iteration=output_memory[:, 0],
             iteration_to_end=0,
         ) or self._stop_criterion.should_stop_before(1):
             return output_memory[:, 0].clone()
-        input_memory[:, 1], output_memory[:, 1] = (
-            output_memory[:, 0],
-            fixed_point_function(output_memory[:, 0]),
-        )
+        input_memory[:, 1] = output_memory[:, 0]
+        fixed_point_function(output_memory[:, 0], output_memory[:, 1])
         if self._stop_criterion.should_stop_after(
             previous_iteration=input_memory[:, 1],
             current_iteration=output_memory[:, 1],
@@ -412,22 +490,29 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
             device=initial_value.device,
         )
         solving_target[:, 0] = 1
-        index = 2
+        index = n_iterations = 2
         while not self._stop_criterion.should_stop_before(index):
             current_memory_length = min(index, self._arguments.memory_length)
             step_differences = (
-                output_memory[:, :current_memory_length] - input_memory[:, :current_memory_length]
+                output_memory[:, :current_memory_length]
+                - input_memory[:, :current_memory_length]
             ).view(batch_size, current_memory_length, -1)
-            coefficients_matrix[:, 1 : current_memory_length + 1, 1 : current_memory_length + 1] = (
+            coefficients_matrix[
+                :, 1 : current_memory_length + 1, 1 : current_memory_length + 1
+            ] = (
                 bmm(step_differences, step_differences.transpose(1, 2))
                 + self._arguments.matrix_epsilon
                 * eye(
-                    current_memory_length, dtype=initial_value.dtype, device=initial_value.device
+                    current_memory_length,
+                    dtype=initial_value.dtype,
+                    device=initial_value.device,
                 )[None]
             )
             del step_differences
-            alpha = solve(
-                coefficients_matrix[:, : current_memory_length + 1, : current_memory_length + 1],
+            alpha = solve(  # PyTorch bug - pylint: disable=not-callable
+                coefficients_matrix[
+                    :, : current_memory_length + 1, : current_memory_length + 1
+                ],
                 solving_target[:, : current_memory_length + 1],
             )[:, 1 : current_memory_length + 1, 0]
             input_memory[:, index % self._arguments.memory_length] = (
@@ -450,12 +535,18 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
                     )[:, 0]
                 ).view_as(initial_value)
             del alpha
-            output_memory[:, index % self._arguments.memory_length] = fixed_point_function(
-                input_memory[:, index % self._arguments.memory_length]
+            fixed_point_function(
+                input_memory[:, index % self._arguments.memory_length],
+                output_memory[:, index % self._arguments.memory_length],
             )
+            n_iterations += 1
             if self._stop_criterion.should_stop_after(
-                previous_iteration=input_memory[:, index % self._arguments.memory_length],
-                current_iteration=output_memory[:, index % self._arguments.memory_length],
+                previous_iteration=input_memory[
+                    :, index % self._arguments.memory_length
+                ],
+                current_iteration=output_memory[
+                    :, index % self._arguments.memory_length
+                ],
                 iteration_to_end=index,
             ):
                 break
@@ -464,131 +555,17 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>interface.IFixedPointSolver</li>
+<li><a title="deformation_inversion_layer.interface.IFixedPointSolver" href="interface.html#deformation_inversion_layer.interface.IFixedPointSolver">IFixedPointSolver</a></li>
 <li>abc.ABC</li>
 </ul>
-<h3>Methods</h3>
-<dl>
-<dt id="deformation_inversion_layer.fixed_point_iteration.AndersonSolver.solve"><code class="name flex">
-<span>def <span class="ident">solve</span></span>(<span>self, fixed_point_function: Callable[[torch.Tensor], torch.Tensor], initial_value: torch.Tensor) ‑> torch.Tensor</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Solve fixed point problem</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>fixed_point_function</code></strong></dt>
-<dd>Function to be iterated</dd>
-<dt><strong><code>initial_value</code></strong></dt>
-<dd>Initial iteration value</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>Solution of the fixed point iteration</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def solve(
-    self, fixed_point_function: Callable[[Tensor], Tensor], initial_value: Tensor
-) -&gt; Tensor:
-    if self._stop_criterion.should_stop_before(0):
-        return initial_value
-    initial_value = initial_value.detach()
-    batch_size = initial_value.size(0)
-    data_shape = initial_value.shape[1:]
-    input_memory = zeros(
-        (batch_size, self._arguments.memory_length) + data_shape,
-        dtype=initial_value.dtype,
-        device=initial_value.device,
-    )
-    output_memory = zeros_like(input_memory)
-    input_memory[:, 0], output_memory[:, 0] = (
-        initial_value,
-        fixed_point_function(initial_value),
-    )
-    if self._stop_criterion.should_stop_after(
-        previous_iteration=input_memory[:, 0],
-        current_iteration=output_memory[:, 0],
-        iteration_to_end=0,
-    ) or self._stop_criterion.should_stop_before(1):
-        return output_memory[:, 0].clone()
-    input_memory[:, 1], output_memory[:, 1] = (
-        output_memory[:, 0],
-        fixed_point_function(output_memory[:, 0]),
-    )
-    if self._stop_criterion.should_stop_after(
-        previous_iteration=input_memory[:, 1],
-        current_iteration=output_memory[:, 1],
-        iteration_to_end=1,
-    ):
-        return output_memory[:, 1].clone()
-    coefficients_matrix = zeros(
-        batch_size,
-        self._arguments.memory_length + 1,
-        self._arguments.memory_length + 1,
-        dtype=initial_value.dtype,
-        device=initial_value.device,
-    )
-    coefficients_matrix[:, 0, 1:] = coefficients_matrix[:, 1:, 0] = 1
-    solving_target = zeros(
-        batch_size,
-        self._arguments.memory_length + 1,
-        1,
-        dtype=initial_value.dtype,
-        device=initial_value.device,
-    )
-    solving_target[:, 0] = 1
-    index = 2
-    while not self._stop_criterion.should_stop_before(index):
-        current_memory_length = min(index, self._arguments.memory_length)
-        step_differences = (
-            output_memory[:, :current_memory_length] - input_memory[:, :current_memory_length]
-        ).view(batch_size, current_memory_length, -1)
-        coefficients_matrix[:, 1 : current_memory_length + 1, 1 : current_memory_length + 1] = (
-            bmm(step_differences, step_differences.transpose(1, 2))
-            + self._arguments.matrix_epsilon
-            * eye(
-                current_memory_length, dtype=initial_value.dtype, device=initial_value.device
-            )[None]
-        )
-        del step_differences
-        alpha = solve(
-            coefficients_matrix[:, : current_memory_length + 1, : current_memory_length + 1],
-            solving_target[:, : current_memory_length + 1],
-        )[:, 1 : current_memory_length + 1, 0]
-        input_memory[:, index % self._arguments.memory_length] = (
-            self._arguments.beta
-            * (
-                alpha[:, None]
-                @ output_memory[:, :current_memory_length].view(
-                    batch_size, current_memory_length, -1
-                )
-            )[:, 0]
-        ).view_as(initial_value)
-        if self._arguments.beta != 1.0:
-            input_memory[:, index % self._arguments.memory_length] += (
-                (1 - self._arguments.beta)
-                * (
-                    alpha[:, None]
-                    @ input_memory[:, :current_memory_length].view(
-                        batch_size, current_memory_length, -1
-                    )
-                )[:, 0]
-            ).view_as(initial_value)
-        del alpha
-        output_memory[:, index % self._arguments.memory_length] = fixed_point_function(
-            input_memory[:, index % self._arguments.memory_length]
-        )
-        if self._stop_criterion.should_stop_after(
-            previous_iteration=input_memory[:, index % self._arguments.memory_length],
-            current_iteration=output_memory[:, index % self._arguments.memory_length],
-            iteration_to_end=index,
-        ):
-            break
-        index = index + 1
-    return output_memory[:, index % self._arguments.memory_length].clone()</code></pre>
-</details>
-</dd>
-</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="deformation_inversion_layer.interface.IFixedPointSolver" href="interface.html#deformation_inversion_layer.interface.IFixedPointSolver">IFixedPointSolver</a></b></code>:
+<ul class="hlist">
+<li><code><a title="deformation_inversion_layer.interface.IFixedPointSolver.solve" href="interface.html#deformation_inversion_layer.interface.IFixedPointSolver.solve">solve</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 <dt id="deformation_inversion_layer.fixed_point_iteration.AndersonSolverArguments"><code class="flex name class">
 <span>class <span class="ident">AndersonSolverArguments</span></span>
@@ -611,7 +588,7 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
 </summary>
 <pre><code class="python">class AndersonSolverArguments(NamedTuple):
     &#34;&#34;&#34;Arguments for Anderson solver
-    
+
     Attributes:
         memory_length: How many iterations to store in memory
         beta: Beta value of Anderson fixed point solver
@@ -644,7 +621,7 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
 </dd>
 <dt id="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion"><code class="flex name class">
 <span>class <span class="ident">BaseStopCriterion</span></span>
-<span>(</span><span>min_iterations: int = 2, max_iterations: int = 50)</span>
+<span>(</span><span>min_iterations: int = 2, max_iterations: int = 50, check_convergence_every_nth_iteration: int = 1)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Base stop criterion definining min and max number of iterations</p>
@@ -654,6 +631,10 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
 <dd>Minimum number of iterations to use</dd>
 <dt><strong><code>max_iterations</code></strong></dt>
 <dd>Maximum number of iterations to use</dd>
+<dt><strong><code>check_convergence_every_nth_iteration</code></strong></dt>
+<dd>Check convergence criterion
+only every nth itheration, does not have effect on stopping based on
+min or max number of iterations.</dd>
 </dl></div>
 <details class="source">
 <summary>
@@ -661,28 +642,54 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
 </summary>
 <pre><code class="python">class BaseStopCriterion(IFixedPointStopCriterion):
     &#34;&#34;&#34;Base stop criterion definining min and max number of iterations
-    
+
     Args:
         min_iterations: Minimum number of iterations to use
         max_iterations: Maximum number of iterations to use
+        check_convergence_every_nth_iteration: Check convergence criterion
+            only every nth itheration, does not have effect on stopping based on
+            min or max number of iterations.
     &#34;&#34;&#34;
 
-    def __init__(self, min_iterations: int = 2, max_iterations: int = 50) -&gt; None:
+    def __init__(
+        self,
+        min_iterations: int = 2,
+        max_iterations: int = 50,
+        check_convergence_every_nth_iteration: int = 1,
+    ) -&gt; None:
         self._min_iterations = min_iterations
         self._max_iterations = max_iterations
+        self._check_convergence_every_nth_iteration = (
+            check_convergence_every_nth_iteration
+        )
+
+    def _should_check_convergence(self, iteration_to_end: int) -&gt; bool:
+        return (
+            (iteration_to_end + 1) % self._check_convergence_every_nth_iteration
+        ) == 0
 
     @abstractmethod
     def _should_stop_after(
-        self, previous_iteration: Tensor, current_iteration: Tensor, iteration_to_end: int
+        self,
+        previous_iteration: Tensor,
+        current_iteration: Tensor,
+        iteration_to_end: int,
     ) -&gt; bool:
         &#34;&#34;&#34;Return whether should stop after the iteration&#34;&#34;&#34;
 
     def should_stop_after(
-        self, previous_iteration: Tensor, current_iteration: Tensor, iteration_to_end: int
+        self,
+        previous_iteration: Tensor,
+        current_iteration: Tensor,
+        iteration_to_end: int,
     ) -&gt; bool:
         if iteration_to_end + 1 &lt; self._min_iterations:
             return False
-        return self._should_stop_after(previous_iteration, current_iteration, iteration_to_end)
+        return self._should_check_convergence(
+            iteration_to_end
+        ) and self._should_stop_after(
+            previous_iteration, current_iteration, iteration_to_end
+        )
 
     def should_stop_before(self, iteration_to_start: int) -&gt; bool:
         if self._max_iterations &gt; iteration_to_start:
@@ -691,69 +698,24 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>interface.IFixedPointStopCriterion</li>
+<li><a title="deformation_inversion_layer.interface.IFixedPointStopCriterion" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion">IFixedPointStopCriterion</a></li>
 <li>abc.ABC</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
+<li><a title="deformation_inversion_layer.fixed_point_iteration.FixedIterationCountStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.FixedIterationCountStopCriterion">FixedIterationCountStopCriterion</a></li>
 <li><a title="deformation_inversion_layer.fixed_point_iteration.MaxElementWiseAbsStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.MaxElementWiseAbsStopCriterion">MaxElementWiseAbsStopCriterion</a></li>
 <li><a title="deformation_inversion_layer.fixed_point_iteration.RelativeL2ErrorStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.RelativeL2ErrorStopCriterion">RelativeL2ErrorStopCriterion</a></li>
 </ul>
-<h3>Methods</h3>
-<dl>
-<dt id="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_after"><code class="name flex">
-<span>def <span class="ident">should_stop_after</span></span>(<span>self, previous_iteration: torch.Tensor, current_iteration: torch.Tensor, iteration_to_end: int) ‑> bool</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Return whether iterating should be stopped at end of an iteration</p>
-<p>After first evaluation of the fixed point function iteration_to_end == 0</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>previous_iteration</code></strong></dt>
-<dd>Previous output of the fixed point iteration</dd>
-<dt><strong><code>current_iteration</code></strong></dt>
-<dd>Current output of the fixed point iteration</dd>
-<dt><strong><code>iteration_to_end</code></strong></dt>
-<dd>Index of the iteration which ended</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>Whether the iteration should be stopped</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def should_stop_after(
-    self, previous_iteration: Tensor, current_iteration: Tensor, iteration_to_end: int
-) -&gt; bool:
-    if iteration_to_end + 1 &lt; self._min_iterations:
-        return False
-    return self._should_stop_after(previous_iteration, current_iteration, iteration_to_end)</code></pre>
-</details>
-</dd>
-<dt id="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_before"><code class="name flex">
-<span>def <span class="ident">should_stop_before</span></span>(<span>self, iteration_to_start: int) ‑> bool</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Return whether iterating should be continued at beginning of an iteration</p>
-<p>Before first evaluation of the fixed point function iteration_to_start == 0</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>iteration_to_start</code></strong></dt>
-<dd>Index of the iteration being started</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>Whether the iteration should be stopped</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def should_stop_before(self, iteration_to_start: int) -&gt; bool:
-    if self._max_iterations &gt; iteration_to_start:
-        return False
-    return True</code></pre>
-</details>
-</dd>
-</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="deformation_inversion_layer.interface.IFixedPointStopCriterion" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion">IFixedPointStopCriterion</a></b></code>:
+<ul class="hlist">
+<li><code><a title="deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_after" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_after">should_stop_after</a></code></li>
+<li><code><a title="deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_before" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_before">should_stop_before</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 <dt id="deformation_inversion_layer.fixed_point_iteration.EmptySolver"><code class="flex name class">
 <span>class <span class="ident">EmptySolver</span></span>
@@ -768,79 +730,105 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
     &#34;&#34;&#34;Empty fixed point solver which returns the initial guess&#34;&#34;&#34;
 
     def solve(
-        self, fixed_point_function: Callable[[Tensor], Tensor], initial_value: Tensor
+        self,
+        fixed_point_function: Callable[[Tensor, Tensor], None],
+        initial_value: Tensor,
     ) -&gt; Tensor:
         return initial_value</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>interface.IFixedPointSolver</li>
+<li><a title="deformation_inversion_layer.interface.IFixedPointSolver" href="interface.html#deformation_inversion_layer.interface.IFixedPointSolver">IFixedPointSolver</a></li>
 <li>abc.ABC</li>
 </ul>
-<h3>Methods</h3>
-<dl>
-<dt id="deformation_inversion_layer.fixed_point_iteration.EmptySolver.solve"><code class="name flex">
-<span>def <span class="ident">solve</span></span>(<span>self, fixed_point_function: Callable[[torch.Tensor], torch.Tensor], initial_value: torch.Tensor) ‑> torch.Tensor</span>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="deformation_inversion_layer.interface.IFixedPointSolver" href="interface.html#deformation_inversion_layer.interface.IFixedPointSolver">IFixedPointSolver</a></b></code>:
+<ul class="hlist">
+<li><code><a title="deformation_inversion_layer.interface.IFixedPointSolver.solve" href="interface.html#deformation_inversion_layer.interface.IFixedPointSolver.solve">solve</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+<dt id="deformation_inversion_layer.fixed_point_iteration.FixedIterationCountStopCriterion"><code class="flex name class">
+<span>class <span class="ident">FixedIterationCountStopCriterion</span></span>
+<span>(</span><span>n_iterations: int = 50)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Solve fixed point problem</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>fixed_point_function</code></strong></dt>
-<dd>Function to be iterated</dd>
-<dt><strong><code>initial_value</code></strong></dt>
-<dd>Initial iteration value</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>Solution of the fixed point iteration</p></div>
+<div class="desc"><p>Iteration is terminated based on fixed iteration count</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def solve(
-    self, fixed_point_function: Callable[[Tensor], Tensor], initial_value: Tensor
-) -&gt; Tensor:
-    return initial_value</code></pre>
+<pre><code class="python">class FixedIterationCountStopCriterion(BaseStopCriterion):
+    &#34;&#34;&#34;Iteration is terminated based on fixed iteration count&#34;&#34;&#34;
+
+    def __init__(
+        self,
+        n_iterations: int = 50,
+    ) -&gt; None:
+        super().__init__(
+            min_iterations=0,
+            max_iterations=n_iterations,
+            check_convergence_every_nth_iteration=1,
+        )
+
+    def _should_stop_after(
+        self,
+        previous_iteration: Tensor,
+        current_iteration: Tensor,
+        iteration_to_end: int,
+    ) -&gt; bool:
+        return False</code></pre>
 </details>
-</dd>
-</dl>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion">BaseStopCriterion</a></li>
+<li><a title="deformation_inversion_layer.interface.IFixedPointStopCriterion" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion">IFixedPointStopCriterion</a></li>
+<li>abc.ABC</li>
+</ul>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion">BaseStopCriterion</a></b></code>:
+<ul class="hlist">
+<li><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_after" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_after">should_stop_after</a></code></li>
+<li><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_before" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_before">should_stop_before</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 <dt id="deformation_inversion_layer.fixed_point_iteration.MaxElementWiseAbsStopCriterion"><code class="flex name class">
 <span>class <span class="ident">MaxElementWiseAbsStopCriterion</span></span>
-<span>(</span><span>min_iterations: int = 2, max_iterations: int = 50, threshold: float = 0.01)</span>
+<span>(</span><span>min_iterations: int = 1, max_iterations: int = 50, threshold: float = 0.01, check_convergence_every_nth_iteration: int = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Criterion which stops when no element-wise difference is larger than a threshold</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>min_iterations</code></strong></dt>
-<dd>Minimum number of iterations to use</dd>
-<dt><strong><code>max_iterations</code></strong></dt>
-<dd>Maximum number of iterations to use</dd>
-<dt><strong><code>threshold</code></strong></dt>
-<dd>Error threshold for stopping the iteration</dd>
-</dl></div>
+<div class="desc"><p>Stops when no element-wise difference is larger than a threshold</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class MaxElementWiseAbsStopCriterion(BaseStopCriterion):
-    &#34;&#34;&#34;Criterion which stops when no element-wise difference is larger than a threshold
-    
-    Args:
-        min_iterations: Minimum number of iterations to use
-        max_iterations: Maximum number of iterations to use
-        threshold: Error threshold for stopping the iteration
-    &#34;&#34;&#34;
+    &#34;&#34;&#34;Stops when no element-wise difference is larger than a threshold&#34;&#34;&#34;
 
     def __init__(
-        self, min_iterations: int = 2, max_iterations: int = 50, threshold: float = 1e-2
+        self,
+        min_iterations: int = 1,
+        max_iterations: int = 50,
+        threshold: float = 1e-2,
+        check_convergence_every_nth_iteration: int = 1,
     ) -&gt; None:
-        super().__init__(min_iterations=min_iterations, max_iterations=max_iterations)
+        super().__init__(
+            min_iterations=min_iterations,
+            max_iterations=max_iterations,
+            check_convergence_every_nth_iteration=check_convergence_every_nth_iteration,
+        )
         self._threshold = threshold
 
     def _should_stop_after(
-        self, previous_iteration: Tensor, current_iteration: Tensor, iteration_to_end: int
+        self,
+        previous_iteration: Tensor,
+        current_iteration: Tensor,
+        iteration_to_end: int,
     ) -&gt; bool:
         max_difference = torch_max(torch_abs(previous_iteration - current_iteration))
         return bool(max_difference &lt; self._threshold)</code></pre>
@@ -848,22 +836,22 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion">BaseStopCriterion</a></li>
-<li>interface.IFixedPointStopCriterion</li>
+<li><a title="deformation_inversion_layer.interface.IFixedPointStopCriterion" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion">IFixedPointStopCriterion</a></li>
 <li>abc.ABC</li>
 </ul>
 <h3>Inherited members</h3>
 <ul class="hlist">
 <li><code><b><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion">BaseStopCriterion</a></b></code>:
 <ul class="hlist">
-<li><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_after" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_after">should_stop_after</a></code></li>
-<li><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_before" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_before">should_stop_before</a></code></li>
+<li><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_after" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_after">should_stop_after</a></code></li>
+<li><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_before" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_before">should_stop_before</a></code></li>
 </ul>
 </li>
 </ul>
 </dd>
 <dt id="deformation_inversion_layer.fixed_point_iteration.NaiveSolver"><code class="flex name class">
 <span>class <span class="ident">NaiveSolver</span></span>
-<span>(</span><span>stop_criterion: Optional[interface.IFixedPointStopCriterion] = None)</span>
+<span>(</span><span>stop_criterion: Optional[<a title="deformation_inversion_layer.interface.IFixedPointStopCriterion" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion">IFixedPointStopCriterion</a>] = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Naive fixed point solver</p>
@@ -878,7 +866,7 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
 </summary>
 <pre><code class="python">class NaiveSolver(IFixedPointSolver):
     &#34;&#34;&#34;Naive fixed point solver
-    
+
     Args:
         stop_criterion: Stop criterion to use
     &#34;&#34;&#34;
@@ -888,112 +876,82 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
         stop_criterion: Optional[IFixedPointStopCriterion] = None,
     ) -&gt; None:
         self._stop_criterion = (
-            MaxElementWiseAbsStopCriterion() if stop_criterion is None else stop_criterion
+            MaxElementWiseAbsStopCriterion()
+            if stop_criterion is None
+            else stop_criterion
         )
 
     def solve(
-        self, fixed_point_function: Callable[[Tensor], Tensor], initial_value: Tensor
+        self,
+        fixed_point_function: Callable[[Tensor, Tensor], None],
+        initial_value: Tensor,
     ) -&gt; Tensor:
-        output = previous_output = initial_value
-        iteration = 0
-        while not self._stop_criterion.should_stop_before(iteration):
-            output = fixed_point_function(previous_output)
+        cache = empty(
+            (2,) + initial_value.shape,
+            dtype=initial_value.dtype,
+            device=initial_value.device,
+        )
+        cache[0] = initial_value
+        n_iterations = 0
+        while not self._stop_criterion.should_stop_before(n_iterations):
+            fixed_point_function(cache[n_iterations % 2], cache[(n_iterations + 1) % 2])
+            n_iterations += 1
             if self._stop_criterion.should_stop_after(
-                previous_iteration=previous_output,
-                current_iteration=output,
-                iteration_to_end=iteration,
+                previous_iteration=cache[n_iterations % 2],
+                current_iteration=cache[(n_iterations + 1) % 2],
+                iteration_to_end=n_iterations - 1,
             ):
                 break
-            previous_output = output
-            iteration += 1
-        return output</code></pre>
+        return cache[n_iterations % 2].clone()</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>interface.IFixedPointSolver</li>
+<li><a title="deformation_inversion_layer.interface.IFixedPointSolver" href="interface.html#deformation_inversion_layer.interface.IFixedPointSolver">IFixedPointSolver</a></li>
 <li>abc.ABC</li>
 </ul>
-<h3>Methods</h3>
-<dl>
-<dt id="deformation_inversion_layer.fixed_point_iteration.NaiveSolver.solve"><code class="name flex">
-<span>def <span class="ident">solve</span></span>(<span>self, fixed_point_function: Callable[[torch.Tensor], torch.Tensor], initial_value: torch.Tensor) ‑> torch.Tensor</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Solve fixed point problem</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>fixed_point_function</code></strong></dt>
-<dd>Function to be iterated</dd>
-<dt><strong><code>initial_value</code></strong></dt>
-<dd>Initial iteration value</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>Solution of the fixed point iteration</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def solve(
-    self, fixed_point_function: Callable[[Tensor], Tensor], initial_value: Tensor
-) -&gt; Tensor:
-    output = previous_output = initial_value
-    iteration = 0
-    while not self._stop_criterion.should_stop_before(iteration):
-        output = fixed_point_function(previous_output)
-        if self._stop_criterion.should_stop_after(
-            previous_iteration=previous_output,
-            current_iteration=output,
-            iteration_to_end=iteration,
-        ):
-            break
-        previous_output = output
-        iteration += 1
-    return output</code></pre>
-</details>
-</dd>
-</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="deformation_inversion_layer.interface.IFixedPointSolver" href="interface.html#deformation_inversion_layer.interface.IFixedPointSolver">IFixedPointSolver</a></b></code>:
+<ul class="hlist">
+<li><code><a title="deformation_inversion_layer.interface.IFixedPointSolver.solve" href="interface.html#deformation_inversion_layer.interface.IFixedPointSolver.solve">solve</a></code></li>
+</ul>
+</li>
+</ul>
 </dd>
 <dt id="deformation_inversion_layer.fixed_point_iteration.RelativeL2ErrorStopCriterion"><code class="flex name class">
 <span>class <span class="ident">RelativeL2ErrorStopCriterion</span></span>
-<span>(</span><span>min_iterations: int = 2, max_iterations: int = 50, threshold: float = 0.01, epsilon: float = 1e-05)</span>
+<span>(</span><span>min_iterations: int = 1, max_iterations: int = 50, threshold: float = 0.01, epsilon: float = 1e-05, check_convergence_every_nth_iteration: int = 1)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Criterion which stops when relative L^2 error is below a threshold</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>min_iterations</code></strong></dt>
-<dd>Minimum number of iterations to use</dd>
-<dt><strong><code>max_iterations</code></strong></dt>
-<dd>Maximum number of iterations to use</dd>
-<dt><strong><code>threshold</code></strong></dt>
-<dd>Error threshold for stopping the iteration</dd>
-</dl></div>
+<div class="desc"><p>Stops when relative L^2 error is below the set threshold</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class RelativeL2ErrorStopCriterion(BaseStopCriterion):
-    &#34;&#34;&#34;Criterion which stops when relative L^2 error is below a threshold
-    
-    Args:
-        min_iterations: Minimum number of iterations to use
-        max_iterations: Maximum number of iterations to use
-        threshold: Error threshold for stopping the iteration
-    &#34;&#34;&#34;
+    &#34;&#34;&#34;Stops when relative L^2 error is below the set threshold&#34;&#34;&#34;
 
     def __init__(
         self,
-        min_iterations: int = 2,
+        min_iterations: int = 1,
         max_iterations: int = 50,
         threshold: float = 1e-2,
         epsilon: float = 1e-5,
+        check_convergence_every_nth_iteration: int = 1,
     ) -&gt; None:
-        super().__init__(min_iterations=min_iterations, max_iterations=max_iterations)
+        super().__init__(
+            min_iterations=min_iterations,
+            max_iterations=max_iterations,
+            check_convergence_every_nth_iteration=check_convergence_every_nth_iteration,
+        )
         self._threshold = threshold
         self._epsilon = epsilon
 
     def _should_stop_after(
-        self, previous_iteration: Tensor, current_iteration: Tensor, iteration_to_end: int
+        self,
+        previous_iteration: Tensor,
+        current_iteration: Tensor,
+        iteration_to_end: int,
     ) -&gt; bool:
         error = (current_iteration - previous_iteration).norm() / (
             self._epsilon + current_iteration.norm().item()
@@ -1003,15 +961,15 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion">BaseStopCriterion</a></li>
-<li>interface.IFixedPointStopCriterion</li>
+<li><a title="deformation_inversion_layer.interface.IFixedPointStopCriterion" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion">IFixedPointStopCriterion</a></li>
 <li>abc.ABC</li>
 </ul>
 <h3>Inherited members</h3>
 <ul class="hlist">
 <li><code><b><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion">BaseStopCriterion</a></b></code>:
 <ul class="hlist">
-<li><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_after" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_after">should_stop_after</a></code></li>
-<li><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_before" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_before">should_stop_before</a></code></li>
+<li><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_after" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_after">should_stop_after</a></code></li>
+<li><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_before" href="interface.html#deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_before">should_stop_before</a></code></li>
 </ul>
 </li>
 </ul>
@@ -1034,9 +992,6 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
 <ul>
 <li>
 <h4><code><a title="deformation_inversion_layer.fixed_point_iteration.AndersonSolver" href="#deformation_inversion_layer.fixed_point_iteration.AndersonSolver">AndersonSolver</a></code></h4>
-<ul class="">
-<li><code><a title="deformation_inversion_layer.fixed_point_iteration.AndersonSolver.solve" href="#deformation_inversion_layer.fixed_point_iteration.AndersonSolver.solve">solve</a></code></li>
-</ul>
 </li>
 <li>
 <h4><code><a title="deformation_inversion_layer.fixed_point_iteration.AndersonSolverArguments" href="#deformation_inversion_layer.fixed_point_iteration.AndersonSolverArguments">AndersonSolverArguments</a></code></h4>
@@ -1048,25 +1003,18 @@ SIAM Journal on Numerical Analysis 49.4 (2011): 1715-1735.</p>
 </li>
 <li>
 <h4><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion">BaseStopCriterion</a></code></h4>
-<ul class="">
-<li><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_after" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_after">should_stop_after</a></code></li>
-<li><code><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_before" href="#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion.should_stop_before">should_stop_before</a></code></li>
-</ul>
 </li>
 <li>
 <h4><code><a title="deformation_inversion_layer.fixed_point_iteration.EmptySolver" href="#deformation_inversion_layer.fixed_point_iteration.EmptySolver">EmptySolver</a></code></h4>
-<ul class="">
-<li><code><a title="deformation_inversion_layer.fixed_point_iteration.EmptySolver.solve" href="#deformation_inversion_layer.fixed_point_iteration.EmptySolver.solve">solve</a></code></li>
-</ul>
+</li>
+<li>
+<h4><code><a title="deformation_inversion_layer.fixed_point_iteration.FixedIterationCountStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.FixedIterationCountStopCriterion">FixedIterationCountStopCriterion</a></code></h4>
 </li>
 <li>
 <h4><code><a title="deformation_inversion_layer.fixed_point_iteration.MaxElementWiseAbsStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.MaxElementWiseAbsStopCriterion">MaxElementWiseAbsStopCriterion</a></code></h4>
 </li>
 <li>
 <h4><code><a title="deformation_inversion_layer.fixed_point_iteration.NaiveSolver" href="#deformation_inversion_layer.fixed_point_iteration.NaiveSolver">NaiveSolver</a></code></h4>
-<ul class="">
-<li><code><a title="deformation_inversion_layer.fixed_point_iteration.NaiveSolver.solve" href="#deformation_inversion_layer.fixed_point_iteration.NaiveSolver.solve">solve</a></code></li>
-</ul>
 </li>
 <li>
 <h4><code><a title="deformation_inversion_layer.fixed_point_iteration.RelativeL2ErrorStopCriterion" href="#deformation_inversion_layer.fixed_point_iteration.RelativeL2ErrorStopCriterion">RelativeL2ErrorStopCriterion</a></code></h4>

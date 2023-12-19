@@ -31,8 +31,9 @@
 
 from torch import Tensor
 
+from ..interface import IInterpolator
+
 from .algorithm import interpolate
-from interface import IInterpolator
 
 
 class LinearInterpolator(IInterpolator):
@@ -43,7 +44,10 @@ class LinearInterpolator(IInterpolator):
 
     def __call__(self, volume: Tensor, coordinates: Tensor) -&gt; Tensor:
         return interpolate(
-            volume=volume, grid=coordinates, mode=&#34;bilinear&#34;, padding_mode=self._padding_mode
+            volume=volume,
+            grid=coordinates,
+            mode=&#34;bilinear&#34;,
+            padding_mode=self._padding_mode,
         )
 
 
@@ -55,7 +59,10 @@ class NearestInterpolator(IInterpolator):
 
     def __call__(self, volume: Tensor, coordinates: Tensor) -&gt; Tensor:
         return interpolate(
-            volume=volume, grid=coordinates, mode=&#34;nearest&#34;, padding_mode=self._padding_mode
+            volume=volume,
+            grid=coordinates,
+            mode=&#34;nearest&#34;,
+            padding_mode=self._padding_mode,
         )</code></pre>
 </details>
 </section>
@@ -86,12 +93,15 @@ class NearestInterpolator(IInterpolator):
 
     def __call__(self, volume: Tensor, coordinates: Tensor) -&gt; Tensor:
         return interpolate(
-            volume=volume, grid=coordinates, mode=&#34;bilinear&#34;, padding_mode=self._padding_mode
+            volume=volume,
+            grid=coordinates,
+            mode=&#34;bilinear&#34;,
+            padding_mode=self._padding_mode,
         )</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>interface.IInterpolator</li>
+<li><a title="deformation_inversion_layer.interface.IInterpolator" href="../interface.html#deformation_inversion_layer.interface.IInterpolator">IInterpolator</a></li>
 <li>abc.ABC</li>
 </ul>
 </dd>
@@ -113,12 +123,15 @@ class NearestInterpolator(IInterpolator):
 
     def __call__(self, volume: Tensor, coordinates: Tensor) -&gt; Tensor:
         return interpolate(
-            volume=volume, grid=coordinates, mode=&#34;nearest&#34;, padding_mode=self._padding_mode
+            volume=volume,
+            grid=coordinates,
+            mode=&#34;nearest&#34;,
+            padding_mode=self._padding_mode,
         )</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>interface.IInterpolator</li>
+<li><a title="deformation_inversion_layer.interface.IInterpolator" href="../interface.html#deformation_inversion_layer.interface.IInterpolator">IInterpolator</a></li>
 <li>abc.ABC</li>
 </ul>
 </dd>

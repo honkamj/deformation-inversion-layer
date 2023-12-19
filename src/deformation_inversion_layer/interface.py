@@ -31,13 +31,14 @@ class IFixedPointSolver(ABC):
     @abstractmethod
     def solve(
         self,
-        fixed_point_function: Callable[[Tensor], Tensor],
+        fixed_point_function: Callable[[Tensor, Tensor], None],
         initial_value: Tensor,
     ) -> Tensor:
         """Solve fixed point problem
 
         Args:
-            fixed_point_function: Function to be iterated
+            fixed_point_function: Function to be iterated, the function should store
+                its output in-place to the Tensor of the second argument
             initial_value: Initial iteration value
 
         Returns:
@@ -50,7 +51,10 @@ class IFixedPointStopCriterion(ABC):
 
     @abstractmethod
     def should_stop_after(
-        self, previous_iteration: Tensor, current_iteration: Tensor, iteration_to_end: int
+        self,
+        previous_iteration: Tensor,
+        current_iteration: Tensor,
+        iteration_to_end: int,
     ) -> bool:
         """Return whether iterating should be stopped at end of an iteration
 
