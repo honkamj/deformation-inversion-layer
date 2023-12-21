@@ -29,13 +29,13 @@
 </summary>
 <pre><code class="python">&#34;&#34;&#34;Interface definitions&#34;&#34;&#34;
 
-from abc import ABC, abstractmethod
-from typing import Callable
+from abc import abstractmethod
+from typing import Protocol, Sequence
 
 from torch import Tensor
 
 
-class IInterpolator(ABC):
+class Interpolator(Protocol):
     &#34;&#34;&#34;Interpolates values on regular grid in voxel coordinates&#34;&#34;&#34;
 
     @abstractmethod
@@ -54,20 +54,36 @@ class IInterpolator(ABC):
         &#34;&#34;&#34;
 
 
-class IFixedPointSolver(ABC):
-    &#34;&#34;&#34;Interface for fixed point solvers&#34;&#34;&#34;
+class FixedPointFunction(Protocol):
+    &#34;&#34;&#34;Protocol for fixed point functions&#34;&#34;&#34;
+
+    def __call__(
+        self,
+        iteration_input: Tensor,
+        output_buffer: Tensor,
+    ) -&gt; None:
+        &#34;&#34;&#34;Call a fixed point function
+
+        Args:
+            iteration_input: Input to the fixed point function
+            output_buffer: Output should be stored in-place to this Tensor (same
+                shape as the input)
+        &#34;&#34;&#34;
+
+
+class FixedPointSolver(Protocol):
+    &#34;&#34;&#34;Protocol for fixed point solvers&#34;&#34;&#34;
 
     @abstractmethod
     def solve(
         self,
-        fixed_point_function: Callable[[Tensor, Tensor], None],
+        fixed_point_function: FixedPointFunction,
         initial_value: Tensor,
     ) -&gt; Tensor:
-        &#34;&#34;&#34;Solve fixed point problem
+        &#34;&#34;&#34;Solve a fixed point problem
 
         Args:
-            fixed_point_function: Function to be iterated, the function should store
-                its output in-place to the Tensor of the second argument
+            fixed_point_function: Function to be iterated until convergence
             initial_value: Initial iteration value
 
         Returns:
@@ -75,37 +91,27 @@ class IFixedPointSolver(ABC):
         &#34;&#34;&#34;
 
 
-class IFixedPointStopCriterion(ABC):
-    &#34;&#34;&#34;Defines stopping criterion for fixed point iteration&#34;&#34;&#34;
+class FixedPointStopCriterion(Protocol):
+    &#34;&#34;&#34;Protocol for fixed point iteration stopping criterions&#34;&#34;&#34;
 
     @abstractmethod
-    def should_stop_after(
+    def should_stop(
         self,
-        previous_iteration: Tensor,
         current_iteration: Tensor,
-        iteration_to_end: int,
+        previous_iterations: Sequence[Tensor],
+        n_earlier_iterations: int,
     ) -&gt; bool:
-        &#34;&#34;&#34;Return whether iterating should be stopped at end of an iteration
-
-        After first evaluation of the fixed point function iteration_to_end == 0
-
-        Args:
-            previous_iteration: Previous output of the fixed point iteration
-            current_iteration: Current output of the fixed point iteration
-            iteration_to_end: Index of the iteration which ended
-
-        Returns:
-            Whether the iteration should be stopped
-        &#34;&#34;&#34;
-
-    @abstractmethod
-    def should_stop_before(self, iteration_to_start: int) -&gt; bool:
         &#34;&#34;&#34;Return whether iterating should be continued at beginning of an iteration
 
-        Before first evaluation of the fixed point function iteration_to_start == 0
-
         Args:
-            iteration_to_start: Index of the iteration being started
+            current_iteration: Current output of the fixed point iteration. For
+                n_earlier_iterations == 0 this equals the initial guess.
+            previous_iterations: Previous outputs of the fixed point iteration,
+                starting from the most recent one. length of this list may
+                depend on the fixed point iteration solver and is always 0 for
+                the n_earlier_iterations == 0.
+            n_earlier_iterations: Number of calls made to the fixed point function
+                before the next iteration.
 
         Returns:
             Whether the iteration should be stopped
@@ -121,29 +127,61 @@ class IFixedPointStopCriterion(ABC):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="deformation_inversion_layer.interface.IFixedPointSolver"><code class="flex name class">
-<span>class <span class="ident">IFixedPointSolver</span></span>
+<dt id="deformation_inversion_layer.interface.FixedPointFunction"><code class="flex name class">
+<span>class <span class="ident">FixedPointFunction</span></span>
+<span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Interface for fixed point solvers</p></div>
+<div class="desc"><p>Protocol for fixed point functions</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class IFixedPointSolver(ABC):
-    &#34;&#34;&#34;Interface for fixed point solvers&#34;&#34;&#34;
+<pre><code class="python">class FixedPointFunction(Protocol):
+    &#34;&#34;&#34;Protocol for fixed point functions&#34;&#34;&#34;
+
+    def __call__(
+        self,
+        iteration_input: Tensor,
+        output_buffer: Tensor,
+    ) -&gt; None:
+        &#34;&#34;&#34;Call a fixed point function
+
+        Args:
+            iteration_input: Input to the fixed point function
+            output_buffer: Output should be stored in-place to this Tensor (same
+                shape as the input)
+        &#34;&#34;&#34;</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+</dd>
+<dt id="deformation_inversion_layer.interface.FixedPointSolver"><code class="flex name class">
+<span>class <span class="ident">FixedPointSolver</span></span>
+<span>(</span><span>*args, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Protocol for fixed point solvers</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FixedPointSolver(Protocol):
+    &#34;&#34;&#34;Protocol for fixed point solvers&#34;&#34;&#34;
 
     @abstractmethod
     def solve(
         self,
-        fixed_point_function: Callable[[Tensor, Tensor], None],
+        fixed_point_function: FixedPointFunction,
         initial_value: Tensor,
     ) -&gt; Tensor:
-        &#34;&#34;&#34;Solve fixed point problem
+        &#34;&#34;&#34;Solve a fixed point problem
 
         Args:
-            fixed_point_function: Function to be iterated, the function should store
-                its output in-place to the Tensor of the second argument
+            fixed_point_function: Function to be iterated until convergence
             initial_value: Initial iteration value
 
         Returns:
@@ -152,7 +190,8 @@ class IFixedPointStopCriterion(ABC):
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>abc.ABC</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
@@ -162,16 +201,15 @@ class IFixedPointStopCriterion(ABC):
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="deformation_inversion_layer.interface.IFixedPointSolver.solve"><code class="name flex">
-<span>def <span class="ident">solve</span></span>(<span>self, fixed_point_function: Callable[[torch.Tensor, torch.Tensor], None], initial_value: torch.Tensor) ‑> torch.Tensor</span>
+<dt id="deformation_inversion_layer.interface.FixedPointSolver.solve"><code class="name flex">
+<span>def <span class="ident">solve</span></span>(<span>self, fixed_point_function: <a title="deformation_inversion_layer.interface.FixedPointFunction" href="#deformation_inversion_layer.interface.FixedPointFunction">FixedPointFunction</a>, initial_value: torch.Tensor) ‑> torch.Tensor</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Solve fixed point problem</p>
+<div class="desc"><p>Solve a fixed point problem</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>fixed_point_function</code></strong></dt>
-<dd>Function to be iterated, the function should store
-its output in-place to the Tensor of the second argument</dd>
+<dd>Function to be iterated until convergence</dd>
 <dt><strong><code>initial_value</code></strong></dt>
 <dd>Initial iteration value</dd>
 </dl>
@@ -184,14 +222,13 @@ its output in-place to the Tensor of the second argument</dd>
 <pre><code class="python">@abstractmethod
 def solve(
     self,
-    fixed_point_function: Callable[[Tensor, Tensor], None],
+    fixed_point_function: FixedPointFunction,
     initial_value: Tensor,
 ) -&gt; Tensor:
-    &#34;&#34;&#34;Solve fixed point problem
+    &#34;&#34;&#34;Solve a fixed point problem
 
     Args:
-        fixed_point_function: Function to be iterated, the function should store
-            its output in-place to the Tensor of the second argument
+        fixed_point_function: Function to be iterated until convergence
         initial_value: Initial iteration value
 
     Returns:
@@ -201,46 +238,37 @@ def solve(
 </dd>
 </dl>
 </dd>
-<dt id="deformation_inversion_layer.interface.IFixedPointStopCriterion"><code class="flex name class">
-<span>class <span class="ident">IFixedPointStopCriterion</span></span>
+<dt id="deformation_inversion_layer.interface.FixedPointStopCriterion"><code class="flex name class">
+<span>class <span class="ident">FixedPointStopCriterion</span></span>
+<span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Defines stopping criterion for fixed point iteration</p></div>
+<div class="desc"><p>Protocol for fixed point iteration stopping criterions</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class IFixedPointStopCriterion(ABC):
-    &#34;&#34;&#34;Defines stopping criterion for fixed point iteration&#34;&#34;&#34;
+<pre><code class="python">class FixedPointStopCriterion(Protocol):
+    &#34;&#34;&#34;Protocol for fixed point iteration stopping criterions&#34;&#34;&#34;
 
     @abstractmethod
-    def should_stop_after(
+    def should_stop(
         self,
-        previous_iteration: Tensor,
         current_iteration: Tensor,
-        iteration_to_end: int,
+        previous_iterations: Sequence[Tensor],
+        n_earlier_iterations: int,
     ) -&gt; bool:
-        &#34;&#34;&#34;Return whether iterating should be stopped at end of an iteration
-
-        After first evaluation of the fixed point function iteration_to_end == 0
-
-        Args:
-            previous_iteration: Previous output of the fixed point iteration
-            current_iteration: Current output of the fixed point iteration
-            iteration_to_end: Index of the iteration which ended
-
-        Returns:
-            Whether the iteration should be stopped
-        &#34;&#34;&#34;
-
-    @abstractmethod
-    def should_stop_before(self, iteration_to_start: int) -&gt; bool:
         &#34;&#34;&#34;Return whether iterating should be continued at beginning of an iteration
 
-        Before first evaluation of the fixed point function iteration_to_start == 0
-
         Args:
-            iteration_to_start: Index of the iteration being started
+            current_iteration: Current output of the fixed point iteration. For
+                n_earlier_iterations == 0 this equals the initial guess.
+            previous_iterations: Previous outputs of the fixed point iteration,
+                starting from the most recent one. length of this list may
+                depend on the fixed point iteration solver and is always 0 for
+                the n_earlier_iterations == 0.
+            n_earlier_iterations: Number of calls made to the fixed point function
+                before the next iteration.
 
         Returns:
             Whether the iteration should be stopped
@@ -248,66 +276,33 @@ def solve(
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>abc.ABC</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
-<li><a title="deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion" href="fixed_point_iteration.html#deformation_inversion_layer.fixed_point_iteration.BaseStopCriterion">BaseStopCriterion</a></li>
+<li><a title="deformation_inversion_layer.fixed_point_iteration.BaseCountingStopCriterion" href="fixed_point_iteration.html#deformation_inversion_layer.fixed_point_iteration.BaseCountingStopCriterion">BaseCountingStopCriterion</a></li>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_after"><code class="name flex">
-<span>def <span class="ident">should_stop_after</span></span>(<span>self, previous_iteration: torch.Tensor, current_iteration: torch.Tensor, iteration_to_end: int) ‑> bool</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Return whether iterating should be stopped at end of an iteration</p>
-<p>After first evaluation of the fixed point function iteration_to_end == 0</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>previous_iteration</code></strong></dt>
-<dd>Previous output of the fixed point iteration</dd>
-<dt><strong><code>current_iteration</code></strong></dt>
-<dd>Current output of the fixed point iteration</dd>
-<dt><strong><code>iteration_to_end</code></strong></dt>
-<dd>Index of the iteration which ended</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>Whether the iteration should be stopped</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">@abstractmethod
-def should_stop_after(
-    self,
-    previous_iteration: Tensor,
-    current_iteration: Tensor,
-    iteration_to_end: int,
-) -&gt; bool:
-    &#34;&#34;&#34;Return whether iterating should be stopped at end of an iteration
-
-    After first evaluation of the fixed point function iteration_to_end == 0
-
-    Args:
-        previous_iteration: Previous output of the fixed point iteration
-        current_iteration: Current output of the fixed point iteration
-        iteration_to_end: Index of the iteration which ended
-
-    Returns:
-        Whether the iteration should be stopped
-    &#34;&#34;&#34;</code></pre>
-</details>
-</dd>
-<dt id="deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_before"><code class="name flex">
-<span>def <span class="ident">should_stop_before</span></span>(<span>self, iteration_to_start: int) ‑> bool</span>
+<dt id="deformation_inversion_layer.interface.FixedPointStopCriterion.should_stop"><code class="name flex">
+<span>def <span class="ident">should_stop</span></span>(<span>self, current_iteration: torch.Tensor, previous_iterations: Sequence[torch.Tensor], n_earlier_iterations: int) ‑> bool</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Return whether iterating should be continued at beginning of an iteration</p>
-<p>Before first evaluation of the fixed point function iteration_to_start == 0</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>iteration_to_start</code></strong></dt>
-<dd>Index of the iteration being started</dd>
+<dt><strong><code>current_iteration</code></strong></dt>
+<dd>Current output of the fixed point iteration. For
+n_earlier_iterations == 0 this equals the initial guess.</dd>
+<dt><strong><code>previous_iterations</code></strong></dt>
+<dd>Previous outputs of the fixed point iteration,
+starting from the most recent one. length of this list may
+depend on the fixed point iteration solver and is always 0 for
+the n_earlier_iterations == 0.</dd>
+<dt><strong><code>n_earlier_iterations</code></strong></dt>
+<dd>Number of calls made to the fixed point function
+before the next iteration.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <p>Whether the iteration should be stopped</p></div>
@@ -316,13 +311,23 @@ def should_stop_after(
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@abstractmethod
-def should_stop_before(self, iteration_to_start: int) -&gt; bool:
+def should_stop(
+    self,
+    current_iteration: Tensor,
+    previous_iterations: Sequence[Tensor],
+    n_earlier_iterations: int,
+) -&gt; bool:
     &#34;&#34;&#34;Return whether iterating should be continued at beginning of an iteration
 
-    Before first evaluation of the fixed point function iteration_to_start == 0
-
     Args:
-        iteration_to_start: Index of the iteration being started
+        current_iteration: Current output of the fixed point iteration. For
+            n_earlier_iterations == 0 this equals the initial guess.
+        previous_iterations: Previous outputs of the fixed point iteration,
+            starting from the most recent one. length of this list may
+            depend on the fixed point iteration solver and is always 0 for
+            the n_earlier_iterations == 0.
+        n_earlier_iterations: Number of calls made to the fixed point function
+            before the next iteration.
 
     Returns:
         Whether the iteration should be stopped
@@ -331,8 +336,9 @@ def should_stop_before(self, iteration_to_start: int) -&gt; bool:
 </dd>
 </dl>
 </dd>
-<dt id="deformation_inversion_layer.interface.IInterpolator"><code class="flex name class">
-<span>class <span class="ident">IInterpolator</span></span>
+<dt id="deformation_inversion_layer.interface.Interpolator"><code class="flex name class">
+<span>class <span class="ident">Interpolator</span></span>
+<span>(</span><span>*args, **kwargs)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Interpolates values on regular grid in voxel coordinates</p></div>
@@ -340,7 +346,7 @@ def should_stop_before(self, iteration_to_start: int) -&gt; bool:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class IInterpolator(ABC):
+<pre><code class="python">class Interpolator(Protocol):
     &#34;&#34;&#34;Interpolates values on regular grid in voxel coordinates&#34;&#34;&#34;
 
     @abstractmethod
@@ -360,10 +366,12 @@ def should_stop_before(self, iteration_to_start: int) -&gt; bool:
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li>abc.ABC</li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 </ul>
 <h3>Subclasses</h3>
 <ul class="hlist">
+<li><a title="deformation_inversion_layer.interpolator.wrapper.BicubicInterpolator" href="interpolator/wrapper.html#deformation_inversion_layer.interpolator.wrapper.BicubicInterpolator">BicubicInterpolator</a></li>
 <li><a title="deformation_inversion_layer.interpolator.wrapper.LinearInterpolator" href="interpolator/wrapper.html#deformation_inversion_layer.interpolator.wrapper.LinearInterpolator">LinearInterpolator</a></li>
 <li><a title="deformation_inversion_layer.interpolator.wrapper.NearestInterpolator" href="interpolator/wrapper.html#deformation_inversion_layer.interpolator.wrapper.NearestInterpolator">NearestInterpolator</a></li>
 </ul>
@@ -385,20 +393,22 @@ def should_stop_before(self, iteration_to_start: int) -&gt; bool:
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="deformation_inversion_layer.interface.IFixedPointSolver" href="#deformation_inversion_layer.interface.IFixedPointSolver">IFixedPointSolver</a></code></h4>
+<h4><code><a title="deformation_inversion_layer.interface.FixedPointFunction" href="#deformation_inversion_layer.interface.FixedPointFunction">FixedPointFunction</a></code></h4>
+</li>
+<li>
+<h4><code><a title="deformation_inversion_layer.interface.FixedPointSolver" href="#deformation_inversion_layer.interface.FixedPointSolver">FixedPointSolver</a></code></h4>
 <ul class="">
-<li><code><a title="deformation_inversion_layer.interface.IFixedPointSolver.solve" href="#deformation_inversion_layer.interface.IFixedPointSolver.solve">solve</a></code></li>
+<li><code><a title="deformation_inversion_layer.interface.FixedPointSolver.solve" href="#deformation_inversion_layer.interface.FixedPointSolver.solve">solve</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="deformation_inversion_layer.interface.IFixedPointStopCriterion" href="#deformation_inversion_layer.interface.IFixedPointStopCriterion">IFixedPointStopCriterion</a></code></h4>
+<h4><code><a title="deformation_inversion_layer.interface.FixedPointStopCriterion" href="#deformation_inversion_layer.interface.FixedPointStopCriterion">FixedPointStopCriterion</a></code></h4>
 <ul class="">
-<li><code><a title="deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_after" href="#deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_after">should_stop_after</a></code></li>
-<li><code><a title="deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_before" href="#deformation_inversion_layer.interface.IFixedPointStopCriterion.should_stop_before">should_stop_before</a></code></li>
+<li><code><a title="deformation_inversion_layer.interface.FixedPointStopCriterion.should_stop" href="#deformation_inversion_layer.interface.FixedPointStopCriterion.should_stop">should_stop</a></code></li>
 </ul>
 </li>
 <li>
-<h4><code><a title="deformation_inversion_layer.interface.IInterpolator" href="#deformation_inversion_layer.interface.IInterpolator">IInterpolator</a></code></h4>
+<h4><code><a title="deformation_inversion_layer.interface.Interpolator" href="#deformation_inversion_layer.interface.Interpolator">Interpolator</a></code></h4>
 </li>
 </ul>
 </li>

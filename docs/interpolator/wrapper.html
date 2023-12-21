@@ -31,12 +31,11 @@
 
 from torch import Tensor
 
-from ..interface import IInterpolator
-
+from ..interface import Interpolator
 from .algorithm import interpolate
 
 
-class LinearInterpolator(IInterpolator):
+class LinearInterpolator(Interpolator):
     &#34;&#34;&#34;Linear interpolation in voxel coordinates&#34;&#34;&#34;
 
     def __init__(self, padding_mode: str = &#34;border&#34;) -&gt; None:
@@ -51,7 +50,7 @@ class LinearInterpolator(IInterpolator):
         )
 
 
-class NearestInterpolator(IInterpolator):
+class NearestInterpolator(Interpolator):
     &#34;&#34;&#34;Nearest neighbour interpolation in voxel coordinates&#34;&#34;&#34;
 
     def __init__(self, padding_mode: str = &#34;border&#34;) -&gt; None:
@@ -62,6 +61,21 @@ class NearestInterpolator(IInterpolator):
             volume=volume,
             grid=coordinates,
             mode=&#34;nearest&#34;,
+            padding_mode=self._padding_mode,
+        )
+
+
+class BicubicInterpolator(Interpolator):
+    &#34;&#34;&#34;Bicubic interpolation in voxel coordinates&#34;&#34;&#34;
+
+    def __init__(self, padding_mode: str = &#34;border&#34;) -&gt; None:
+        self._padding_mode = padding_mode
+
+    def __call__(self, volume: Tensor, coordinates: Tensor) -&gt; Tensor:
+        return interpolate(
+            volume=volume,
+            grid=coordinates,
+            mode=&#34;bicubic&#34;,
             padding_mode=self._padding_mode,
         )</code></pre>
 </details>
@@ -75,6 +89,37 @@ class NearestInterpolator(IInterpolator):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
+<dt id="deformation_inversion_layer.interpolator.wrapper.BicubicInterpolator"><code class="flex name class">
+<span>class <span class="ident">BicubicInterpolator</span></span>
+<span>(</span><span>padding_mode: str = 'border')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Bicubic interpolation in voxel coordinates</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class BicubicInterpolator(Interpolator):
+    &#34;&#34;&#34;Bicubic interpolation in voxel coordinates&#34;&#34;&#34;
+
+    def __init__(self, padding_mode: str = &#34;border&#34;) -&gt; None:
+        self._padding_mode = padding_mode
+
+    def __call__(self, volume: Tensor, coordinates: Tensor) -&gt; Tensor:
+        return interpolate(
+            volume=volume,
+            grid=coordinates,
+            mode=&#34;bicubic&#34;,
+            padding_mode=self._padding_mode,
+        )</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="deformation_inversion_layer.interface.Interpolator" href="../interface.html#deformation_inversion_layer.interface.Interpolator">Interpolator</a></li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
+</ul>
+</dd>
 <dt id="deformation_inversion_layer.interpolator.wrapper.LinearInterpolator"><code class="flex name class">
 <span>class <span class="ident">LinearInterpolator</span></span>
 <span>(</span><span>padding_mode: str = 'border')</span>
@@ -85,7 +130,7 @@ class NearestInterpolator(IInterpolator):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class LinearInterpolator(IInterpolator):
+<pre><code class="python">class LinearInterpolator(Interpolator):
     &#34;&#34;&#34;Linear interpolation in voxel coordinates&#34;&#34;&#34;
 
     def __init__(self, padding_mode: str = &#34;border&#34;) -&gt; None:
@@ -101,8 +146,9 @@ class NearestInterpolator(IInterpolator):
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li><a title="deformation_inversion_layer.interface.IInterpolator" href="../interface.html#deformation_inversion_layer.interface.IInterpolator">IInterpolator</a></li>
-<li>abc.ABC</li>
+<li><a title="deformation_inversion_layer.interface.Interpolator" href="../interface.html#deformation_inversion_layer.interface.Interpolator">Interpolator</a></li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 </ul>
 </dd>
 <dt id="deformation_inversion_layer.interpolator.wrapper.NearestInterpolator"><code class="flex name class">
@@ -115,7 +161,7 @@ class NearestInterpolator(IInterpolator):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class NearestInterpolator(IInterpolator):
+<pre><code class="python">class NearestInterpolator(Interpolator):
     &#34;&#34;&#34;Nearest neighbour interpolation in voxel coordinates&#34;&#34;&#34;
 
     def __init__(self, padding_mode: str = &#34;border&#34;) -&gt; None:
@@ -131,8 +177,9 @@ class NearestInterpolator(IInterpolator):
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
-<li><a title="deformation_inversion_layer.interface.IInterpolator" href="../interface.html#deformation_inversion_layer.interface.IInterpolator">IInterpolator</a></li>
-<li>abc.ABC</li>
+<li><a title="deformation_inversion_layer.interface.Interpolator" href="../interface.html#deformation_inversion_layer.interface.Interpolator">Interpolator</a></li>
+<li>typing.Protocol</li>
+<li>typing.Generic</li>
 </ul>
 </dd>
 </dl>
@@ -151,6 +198,9 @@ class NearestInterpolator(IInterpolator):
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
+<li>
+<h4><code><a title="deformation_inversion_layer.interpolator.wrapper.BicubicInterpolator" href="#deformation_inversion_layer.interpolator.wrapper.BicubicInterpolator">BicubicInterpolator</a></code></h4>
+</li>
 <li>
 <h4><code><a title="deformation_inversion_layer.interpolator.wrapper.LinearInterpolator" href="#deformation_inversion_layer.interpolator.wrapper.LinearInterpolator">LinearInterpolator</a></code></h4>
 </li>
