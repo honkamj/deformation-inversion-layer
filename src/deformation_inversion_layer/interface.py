@@ -1,12 +1,12 @@
 """Interface definitions"""
 
-from abc import ABC, abstractmethod
-from typing import Callable
+from abc import abstractmethod
+from typing import Protocol, Sequence
 
 from torch import Tensor
 
 
-class IInterpolator(ABC):
+class Interpolator(Protocol):
     """Interpolates values on regular grid in voxel coordinates"""
 
     @abstractmethod
@@ -25,20 +25,36 @@ class IInterpolator(ABC):
         """
 
 
-class IFixedPointSolver(ABC):
-    """Interface for fixed point solvers"""
+class FixedPointFunction(Protocol):
+    """Protocol for fixed point functions"""
+
+    def __call__(
+        self,
+        iteration_input: Tensor,
+        output_buffer: Tensor,
+    ) -> None:
+        """Call a fixed point function
+
+        Args:
+            iteration_input: Input to the fixed point function
+            output_buffer: Output should be stored in-place to this Tensor (same
+                shape as the input)
+        """
+
+
+class FixedPointSolver(Protocol):
+    """Protocol for fixed point solvers"""
 
     @abstractmethod
     def solve(
         self,
-        fixed_point_function: Callable[[Tensor, Tensor], None],
+        fixed_point_function: FixedPointFunction,
         initial_value: Tensor,
     ) -> Tensor:
-        """Solve fixed point problem
+        """Solve a fixed point problem
 
         Args:
-            fixed_point_function: Function to be iterated, the function should store
-                its output in-place to the Tensor of the second argument
+            fixed_point_function: Function to be iterated until convergence
             initial_value: Initial iteration value
 
         Returns:
@@ -46,37 +62,27 @@ class IFixedPointSolver(ABC):
         """
 
 
-class IFixedPointStopCriterion(ABC):
-    """Defines stopping criterion for fixed point iteration"""
+class FixedPointStopCriterion(Protocol):
+    """Protocol for fixed point iteration stopping criterions"""
 
     @abstractmethod
-    def should_stop_after(
+    def should_stop(
         self,
-        previous_iteration: Tensor,
         current_iteration: Tensor,
-        iteration_to_end: int,
+        previous_iterations: Sequence[Tensor],
+        n_earlier_iterations: int,
     ) -> bool:
-        """Return whether iterating should be stopped at end of an iteration
-
-        After first evaluation of the fixed point function iteration_to_end == 0
-
-        Args:
-            previous_iteration: Previous output of the fixed point iteration
-            current_iteration: Current output of the fixed point iteration
-            iteration_to_end: Index of the iteration which ended
-
-        Returns:
-            Whether the iteration should be stopped
-        """
-
-    @abstractmethod
-    def should_stop_before(self, iteration_to_start: int) -> bool:
         """Return whether iterating should be continued at beginning of an iteration
 
-        Before first evaluation of the fixed point function iteration_to_start == 0
-
         Args:
-            iteration_to_start: Index of the iteration being started
+            current_iteration: Current output of the fixed point iteration. For
+                n_earlier_iterations == 0 this equals the initial guess.
+            previous_iterations: Previous outputs of the fixed point iteration,
+                starting from the most recent one. length of this list may
+                depend on the fixed point iteration solver and is always 0 for
+                the n_earlier_iterations == 0.
+            n_earlier_iterations: Number of calls made to the fixed point function
+                before the next iteration.
 
         Returns:
             Whether the iteration should be stopped

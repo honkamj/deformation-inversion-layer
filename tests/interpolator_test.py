@@ -76,9 +76,7 @@ class InterpolationTests(TestCase):
                 for (
                     grid,
                     target,
-                ) in BroadcastShapeTestingUtil.expand_tensor_shapes_for_testing(
-                    grid, target
-                ):
+                ) in BroadcastShapeTestingUtil.expand_tensor_shapes_for_testing(grid, target):
                     if target.ndim > 1:
                         batched_volume = volume.expand(target.size(0), *volume.shape)
                     else:
@@ -93,13 +91,9 @@ class InterpolationTests(TestCase):
             for (
                 grid,
                 target,
-            ) in BroadcastShapeTestingUtil.expand_tensor_shapes_for_testing(
-                grid, target
-            ):
+            ) in BroadcastShapeTestingUtil.expand_tensor_shapes_for_testing(grid, target):
                 if target.ndim > 0:
-                    batched_volume = self.VOLUME.expand(
-                        target.size(0), *self.VOLUME.shape
-                    )
+                    batched_volume = self.VOLUME.expand(target.size(0), *self.VOLUME.shape)
                 else:
                     batched_volume = self.VOLUME[None]
                     target = target[None]

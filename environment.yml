@@ -10,3 +10,6 @@ dependencies:
   - pytorch::pytorch=2.0.1
   - ipykernel
   - matplotlib
+  - mypy
+  - pylint
+  - isort

@@ -14,7 +14,7 @@ from .fixed_point_iteration import (
     MaxElementWiseAbsStopCriterion,
     RelativeL2ErrorStopCriterion,
 )
-from .interface import IFixedPointSolver, IInterpolator
+from .interface import FixedPointSolver, Interpolator
 from .interpolator import LinearInterpolator
 from .interpolator.algorithm import generate_voxel_coordinate_grid
 
@@ -35,15 +35,13 @@ class DeformationInversionArguments:
 
     def __init__(
         self,
-        interpolator: Optional[IInterpolator] = None,
-        forward_solver: Optional[IFixedPointSolver] = None,
-        backward_solver: Optional[IFixedPointSolver] = None,
+        interpolator: Optional[Interpolator] = None,
+        forward_solver: Optional[FixedPointSolver] = None,
+        backward_solver: Optional[FixedPointSolver] = None,
         forward_dtype: Optional[torch_dtype] = None,
         backward_dtype: Optional[torch_dtype] = None,
     ) -> None:
-        self.interpolator = (
-            LinearInterpolator() if interpolator is None else interpolator
-        )
+        self.interpolator = LinearInterpolator() if interpolator is None else interpolator
         self.forward_solver = (
             AndersonSolver(
                 stop_criterion=MaxElementWiseAbsStopCriterion(),
@@ -97,7 +95,7 @@ class _FixedPointInvertDisplacementField(Function):  # pylint: disable=abstract-
     def _forward_fixed_point_iteration_step(
         inverted_displacement_field: Tensor,
         displacement_field: Tensor,
-        interpolator: IInterpolator,
+        interpolator: Interpolator,
         coordinates: Tensor,
     ) -> Tensor:
         return -interpolator(
@@ -110,7 +108,7 @@ class _FixedPointInvertDisplacementField(Function):  # pylint: disable=abstract-
         inverted_displacement_field: Tensor,
         out: Tensor,
         displacement_field: Tensor,
-        interpolator: IInterpolator,
+        interpolator: Interpolator,
         coordinates: Tensor,
     ) -> None:
         out[:] = _FixedPointInvertDisplacementField._forward_fixed_point_iteration_step(
@@ -147,9 +145,7 @@ class _FixedPointInvertDisplacementField(Function):  # pylint: disable=abstract-
         coordinates: Optional[Tensor],
     ):
         dtype = (
-            displacement_field.dtype
-            if arguments.forward_dtype is None
-            else arguments.forward_dtype
+            displacement_field.dtype if arguments.forward_dtype is None else arguments.forward_dtype
         )
         type_converted_displacement_field = displacement_field.to(dtype=dtype)
         if coordinates is None:
@@ -211,9 +207,7 @@ class _FixedPointInvertDisplacementField(Function):  # pylint: disable=abstract-
         if displacement_field_grad_needed or coordinates_grad_needed:
             displacement_field: Tensor = ctx.saved_tensors[0]
             inverted_displacement_field: Tensor = ctx.saved_tensors[1]
-            coordinates: Tensor | None = (
-                ctx.saved_tensors[2] if ctx.has_coordinates else None
-            )
+            coordinates: Tensor | None = ctx.saved_tensors[2] if ctx.has_coordinates else None
             arguments: DeformationInversionArguments = ctx.arguments
             del ctx
             dtype = (
@@ -272,9 +266,7 @@ class _FixedPointInvertDisplacementField(Function):  # pylint: disable=abstract-
                     else None
                 )
                 coordinates_grad = (
-                    output_grad[1 if displacement_field_grad_needed else 0].to(
-                        dtype=original_dtype
-                    )
+                    output_grad[1 if displacement_field_grad_needed else 0].to(dtype=original_dtype)
                     if coordinates_grad_needed
                     else None
                 )
