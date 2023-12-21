@@ -13,3 +13,4 @@ dependencies:
   - mypy
   - pylint
   - isort
+  - twine
