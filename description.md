@@ -10,7 +10,7 @@ Install using pip by running the command
 
 ## Requirements
 
-- `Python 3.6+`
+- `Python 3.8+`
 - `PyTorch 1.10+`
 
 ## Source code
