@@ -27,9 +27,9 @@ For SITReg implementation, see repository [SITReg](https://github.com/honkamj/SI
 
 If you use deformation inversion layer, or other parts of the repository, please cite (see [bibtex](citations.bib)):
 
-- **SITReg: Multi-resolution architecture for symmetric, inverse consistent, and topology preserving image registration using deformation inversion layers**  
-[Joel Honkamaa](https://github.com/honkamj), Pekka Marttinen  
-Under review ([eprint arXiv:2303.10211](https://arxiv.org/abs/2303.10211))
+- **SITReg: Multi-resolution architecture for symmetric, inverse consistent, and topology preserving image registration**  
+[Joel Honkamaa](https://github.com/honkamj "Joel Honkamaa"), Pekka Marttinen  
+The Journal of Machine Learning for Biomedical Imaging (MELBA) ([10.59275/j.melba.2024-276b](https://doi.org/10.59275/j.melba.2024-276b "10.59275/j.melba.2024-276b"))
 
 ## Acknowledgments
 
